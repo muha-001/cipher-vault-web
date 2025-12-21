@@ -38,7 +38,7 @@
 ### **كموقع ويب:**
 ```bash
 # استنساخ المستودع
-git clone https://github.com/yourusername/ciphervault-pro.git
+git clone https://github.com/muha-001/ciphervault-pro.git
 
 # النشر على GitHub Pages
 # 1. اذهب إلى Settings → Pages
