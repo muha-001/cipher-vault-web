@@ -14,7 +14,8 @@ class EnhancedSecurityAudit {
             DETECT_TIMING_ATTACKS: true,
             DETECT_CRYPTO_ANOMALIES: true,
             BLOCK_SUSPICIOUS_ACTIVITY: true,
-            ALERT_THRESHOLD: 3
+            ALERT_THRESHOLD: 3,
+            CRYPTO_TIMING_THRESHOLD: 100 // إضافة قيمة افتراضية
         };
         
         this.attackPatterns = this.initializeAttackPatterns();
@@ -254,9 +255,16 @@ class EnhancedSecurityAudit {
     }
     
     async monitorCryptoPerformance() {
+        // التحقق من وجود CryptoEngine
+        if (!window.CryptoEngine || !window.CryptoEngine.encryptData) {
+            console.warn('CryptoEngine not available for monitoring');
+            return;
+        }
+        
         // قياس أداء التشفير أثناء التشغيل
         const originalEncrypt = CryptoEngine.encryptData;
         const originalDecrypt = CryptoEngine.decryptData;
+        const self = this;
         
         CryptoEngine.encryptData = async function(...args) {
             const start = performance.now();
@@ -264,32 +272,32 @@ class EnhancedSecurityAudit {
             const duration = performance.now() - start;
             
             // اكتشاف هجمات التوقيت
-            if (duration > this.auditConfig.CRYPTO_TIMING_THRESHOLD) {
-                this.logEvent('SUSPICIOUS_CRYPTO_TIMING', 'WARNING', {
+            if (duration > self.auditConfig.CRYPTO_TIMING_THRESHOLD) {
+                self.logEvent('SUSPICIOUS_CRYPTO_TIMING', 'WARNING', {
                     operation: 'encrypt',
                     duration,
-                    threshold: this.auditConfig.CRYPTO_TIMING_THRESHOLD
+                    threshold: self.auditConfig.CRYPTO_TIMING_THRESHOLD
                 });
             }
             
             return result;
-        }.bind(this);
+        };
         
         CryptoEngine.decryptData = async function(...args) {
             const start = performance.now();
             const result = await originalDecrypt.apply(this, args);
             const duration = performance.now() - start;
             
-            if (duration > this.auditConfig.CRYPTO_TIMING_THRESHOLD) {
-                this.logEvent('SUSPICIOUS_CRYPTO_TIMING', 'WARNING', {
+            if (duration > self.auditConfig.CRYPTO_TIMING_THRESHOLD) {
+                self.logEvent('SUSPICIOUS_CRYPTO_TIMING', 'WARNING', {
                     operation: 'decrypt',
                     duration,
-                    threshold: this.auditConfig.CRYPTO_TIMING_THRESHOLD
+                    threshold: self.auditConfig.CRYPTO_TIMING_THRESHOLD
                 });
             }
             
             return result;
-        }.bind(this);
+        };
     }
     
     monitorDOMEvents() {
@@ -327,30 +335,41 @@ class EnhancedSecurityAudit {
     
     monitorNetworkRequests() {
         const originalFetch = window.fetch;
+        const self = this;
         
         window.fetch = async function(...args) {
             const [resource, config] = args;
+            let url;
             
-            // تسجيل طلبات الشبكة
-            this.logEvent('NETWORK_REQUEST', 'DEBUG', {
-                url: typeof resource === 'string' ? resource : resource.url,
-                method: config?.method || 'GET',
-                timestamp: Date.now()
-            });
-            
-            // منع طلبات إلى نطاقات غير مصرح بها
-            const url = new URL(resource, window.location.origin);
-            if (!this.isAllowedOrigin(url.origin)) {
-                this.logEvent('UNAUTHORIZED_NETWORK_REQUEST', 'CRITICAL', {
-                    origin: url.origin,
-                    requestedUrl: url.href
+            try {
+                url = new URL(resource, window.location.origin);
+                
+                // تسجيل طلبات الشبكة
+                self.logEvent('NETWORK_REQUEST', 'DEBUG', {
+                    url: url.href,
+                    method: config?.method || 'GET',
+                    timestamp: Date.now()
                 });
                 
-                throw new Error('طلب شبكة غير مصرح به');
+                // منع طلبات إلى نطاقات غير مصرح بها
+                if (!self.isAllowedOrigin(url.origin)) {
+                    self.logEvent('UNAUTHORIZED_NETWORK_REQUEST', 'CRITICAL', {
+                        origin: url.origin,
+                        requestedUrl: url.href
+                    });
+                    
+                    throw new Error('طلب شبكة غير مصرح به');
+                }
+            } catch (error) {
+                // إذا فشل إنشاء URL، تسجيل وتحذير
+                self.logEvent('MALFORMED_NETWORK_REQUEST', 'WARNING', {
+                    resource: typeof resource === 'string' ? resource : 'unknown',
+                    error: error.message
+                });
             }
             
             return originalFetch.apply(window, args);
-        }.bind(this);
+        };
     }
     
     isAllowedOrigin(origin) {
@@ -513,11 +532,16 @@ class EnhancedSecurityAudit {
     
     async checkDebuggingTools() {
         // الكشف عن أدوات التصحيح
-        const debuggerDetected = (() => {
+        let debuggerDetected = false;
+        
+        try {
             const start = Date.now();
-            debugger; // eslint-disable-line no-debugger
-            return Date.now() - start > 100;
-        })();
+            // eslint-disable-next-line no-debugger
+            debugger;
+            debuggerDetected = Date.now() - start > 100;
+        } catch (e) {
+            debuggerDetected = false;
+        }
         
         return {
             check: 'Debugging Tools',
@@ -655,7 +679,12 @@ class EnhancedSecurityAudit {
         }
         
         // تسجيل في وحدة التحكم للتطوير
-        if (process.env.NODE_ENV === 'development') {
+        // استبدال process.env.NODE_ENV بالتحقق من بيئة المتصفح
+        const isDevelopment = window.location.hostname === 'localhost' || 
+                             window.location.hostname === '127.0.0.1' || 
+                             (window._ENV && window._ENV.NODE_ENV === 'development');
+        
+        if (isDevelopment) {
             console.log(`[Security Audit] ${severity}: ${type}`, data);
         }
         
