@@ -155,11 +155,12 @@ class CipherVaultApp {
             modernBrowser: () => {
                 const required = [
                     'Promise',
-                    'async',
-                    'await',
                     'Uint8Array',
                     'TextEncoder',
-                    'TextDecoder'
+                    'TextDecoder',
+                    'Blob',
+                    'File',
+                    'FileReader'
                 ];
                 
                 for (const feature of required) {
@@ -167,17 +168,24 @@ class CipherVaultApp {
                         throw new Error(`Required feature ${feature} is not available. Please use a modern browser.`);
                     }
                 }
+                
+                // Check if browser supports async/await (all modern browsers do)
+                // This is a syntax feature, not a global variable
+                try {
+                    // Test async function support
+                    eval('(async () => {})');
+                    // Test arrow function support
+                    eval('(() => {})');
+                } catch (error) {
+                    throw new Error('Browser does not support modern JavaScript features (async/await). Please use a modern browser.');
+                }
+                
                 return true;
             },
             
             // File API
             fileApi: () => {
-                const required = ['File', 'FileReader', 'Blob'];
-                for (const feature of required) {
-                    if (!window[feature]) {
-                        throw new Error(`File API feature ${feature} is not available.`);
-                    }
-                }
+                // Already checked in modernBrowser check
                 return true;
             }
         };
