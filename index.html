@@ -36,11 +36,17 @@
     <meta name="keywords" content="encryption, security, military, files, AES-256, privacy">
     <meta name="author" content="CipherVault Security Team">
     
-    <!-- Security Headers -->
-    <!-- تم نقل CSP إلى هنا داخل head -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' https://muha-001.github.io; img-src 'self' data: https:;">
+    <!-- Security Headers - تم تصحيح CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+          script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; 
+          style-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com 'unsafe-inline'; 
+          font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; 
+          connect-src 'self' https://muha-001.github.io https://cdn.jsdelivr.net; 
+          img-src 'self' data: https: blob:;
+          worker-src 'self' blob:;
+          child-src 'self' blob:;">
+    
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <!-- تم إزالة X-Frame-Options من meta لأنه يجب أن يكون عبر HTTP header فقط -->
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     
     <!-- PWA Manifest -->
@@ -81,17 +87,36 @@
         min-height: 100vh;
     }
     
-    /* إضافة تحميل احتياطي للـ CSS المفقود */
+    /* CSS احتياطي لمنع الأخطاء البصرية */
+    .security-status-bar, .card-3d, .stats-panel-3d, .footer-3d {
+        display: block;
+    }
+    
+    /* تحسينات مؤقتة لحين تحميل CSS الكامل */
+    #threejs-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+    }
     </style>
     
+    <!-- تصحيح مسارات CSS -->
     <link rel="stylesheet" href="assets/css/main.css" onerror="console.warn('CSS ملف غير موجود, جاري استخدام الأنماط الأساسية');">
-    <link rel="stylesheet" href="assets/css/pwa.css" onerror="console.warn('PWA CSS ملف غير موجود');">
-    <link rel="stylesheet" href="assets/css/dark-mode.css" onerror="console.warn('Dark Mode CSS ملف غير موجود');">
+    <link rel="preload" href="assets/css/pwa.css" as="style" onerror="console.warn('PWA CSS ملف غير موجود');">
+    <link rel="preload" href="assets/css/dark-mode.css" as="style" onerror="console.warn('Dark Mode CSS ملف غير موجود');">
     
-    <!-- Preload critical resources -->
+    <!-- Preload critical resources - تم تصحيح crossorigin -->
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" as="script" crossorigin="anonymous">
     <link rel="preload" href="assets/js/crypto-core.js" as="script">
     <link rel="preload" href="assets/js/main.js" as="script">
+    
+    <!-- Preload مكتبات postprocessing لـ Three.js لمنع خطأ EffectComposer -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js" as="script" crossorigin="anonymous">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js" as="script" crossorigin="anonymous">
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js" as="script" crossorigin="anonymous">
 </head>
 <body>
     <!-- Three.js Canvas -->
@@ -941,13 +966,20 @@
     </div>
 
     <!-- Scripts -->
-    <!-- Core Libraries -->
+    <!-- Core Libraries - إضافة مكتبات postprocessing المطلوبة لـ EffectComposer -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    
+    <!-- مكتبات Postprocessing لحل مشكلة EffectComposer -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    
+    <!-- مكتبات إضافية -->
     <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pako@2.0.4/dist/pako.min.js"></script>
     
-    <!-- Application Scripts (Modular) -->
+    <!-- Application Scripts (Modular) - تصحيح مسارات JS -->
     <script src="assets/js/config.js"></script>
     <script src="assets/js/translations.js"></script>
     <script src="assets/js/three-scene.js"></script>
@@ -962,20 +994,41 @@
     <script src="assets/js/recovery-system.js"></script>
     <script src="assets/js/main.js"></script>
     
-    <!-- Service Worker Registration - معدل -->
+    <!-- Service Worker Registration - معدل بشكل آمن -->
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registered successfully:', registration);
-                    })
-                    .catch(error => {
-                        console.warn('ServiceWorker registration failed:', error);
-                        // Continue without service worker
+        // تسجيل Service Worker مع معالجة أخطاء محسنة
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('service-worker.js', {
+                    scope: './'
+                })
+                .then(function(registration) {
+                    console.log('ServiceWorker registered successfully:', registration);
+                    
+                    // التحقق من التحديثات بشكل آمن
+                    if (registration.installing) {
+                        console.log('Service worker installing');
+                    } else if (registration.waiting) {
+                        console.log('Service worker installed');
+                    } else if (registration.active) {
+                        console.log('Service worker active');
+                    }
+                    
+                    // تحديث Service Worker عند تحميل الصفحة
+                    registration.update().catch(err => {
+                        console.warn('ServiceWorker update check failed:', err);
                     });
-            });
+                })
+                .catch(function(error) {
+                    console.warn('ServiceWorker registration failed:', error);
+                });
+            } else {
+                console.log('Service workers are not supported.');
+            }
         }
+        
+        // التسجيل بعد تحميل الصفحة
+        window.addEventListener('load', registerServiceWorker);
     </script>
     
     <!-- تهيئة متوافقة مع جميع المتصفحات -->
@@ -995,20 +1048,46 @@
             
             if (missingFeatures.length > 0) {
                 console.error('Missing required features:', missingFeatures);
-                document.getElementById('securityLevelValue').textContent = 'UNSUPPORTED BROWSER';
-                alert('Your browser does not support all required features. Please use a modern browser like Chrome, Firefox, or Edge.');
+                const securityLevelElement = document.getElementById('securityLevelValue');
+                if (securityLevelElement) {
+                    securityLevelElement.textContent = 'UNSUPPORTED BROWSER';
+                }
+                
+                // عرض تحذير لطيف بدلاً من alert
+                const statusContainer = document.getElementById('status-container');
+                if (statusContainer) {
+                    const warningDiv = document.getElementById('warning-status');
+                    if (warningDiv) {
+                        warningDiv.style.display = 'block';
+                        document.getElementById('warning-text').textContent = 
+                            'Your browser does not support all required features. Please use Chrome, Firefox, or Edge for full security.';
+                    }
+                }
                 return;
             }
             
-            // تهيئة آمنة للتطبيق
+            // تهيئة آمنة للتطبيق مع تأخير لإعطاء الوقت للمكتبات للتحميل
             setTimeout(() => {
                 if (typeof window.CipherVaultApp !== 'undefined') {
                     window.CipherVaultApp.init().catch(err => {
                         console.error('App initialization failed:', err);
-                        document.getElementById('securityLevelValue').textContent = 'INIT FAILED';
+                        const securityLevelElement = document.getElementById('securityLevelValue');
+                        if (securityLevelElement) {
+                            securityLevelElement.textContent = 'INIT FAILED';
+                        }
+                        
+                        // تسجيل الخطأ في حالة الفشل
+                        const errorDiv = document.getElementById('error-status');
+                        if (errorDiv) {
+                            errorDiv.style.display = 'block';
+                            document.getElementById('error-text').textContent = 
+                                'Application failed to initialize. Please refresh the page.';
+                        }
                     });
+                } else {
+                    console.error('CipherVaultApp not defined. Make sure main.js is loaded.');
                 }
-            }, 1000);
+            }, 1500); // زيادة الوقت لضمان تحميل جميع المكتبات
         });
     </script>
 </body>
