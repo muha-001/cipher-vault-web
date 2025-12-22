@@ -1,6 +1,6 @@
 /**
  * CipherVault 3D Pro - Main Application File
- * Version: 4.1.0
+ * Version: 4.2.0 - Enhanced & Fixed
  * 
  * This file initializes and orchestrates all components of the CipherVault application.
  * It serves as the main entry point for the encryption/decryption system.
@@ -170,7 +170,6 @@ class CipherVaultApp {
                 }
                 
                 // Check if browser supports async/await (all modern browsers do)
-                // This is a syntax feature, not a global variable
                 try {
                     // Test async function support
                     eval('(async () => {})');
@@ -234,7 +233,7 @@ class CipherVaultApp {
             console.log('✓ Military crypto system initialized');
         }
         
-        // Initialize Three.js Scene
+        // Initialize Three.js Scene - مع معالجة أفضل للأخطاء
         if (typeof initThreeJS === 'function') {
             try {
                 initThreeJS();
@@ -246,14 +245,21 @@ class CipherVaultApp {
                 console.log('✓ Three.js scene initialized');
             } catch (error) {
                 console.warn('Three.js initialization failed:', error);
+                // استمر حتى لو فشلت Three.js، فهي ليست أساسية للتشفير
+                this.showStatus('warning', 'threejs_warning', '3D effects initialization failed. Encryption/Decryption will still work.');
             }
         }
         
-        // Initialize PWA Manager
+        // Initialize PWA Manager - مع إصلاح تسجيل المشاكل
         if (window.PWAManager) {
-            this.components.pwa = window.PWAManager;
-            await this.components.pwa.init();
-            console.log('✓ PWA manager initialized');
+            try {
+                this.components.pwa = window.PWAManager;
+                await this.components.pwa.init();
+                console.log('✓ PWA manager initialized');
+            } catch (error) {
+                console.warn('PWA manager initialization failed:', error);
+                // استمر دون PWA، فهي ليست أساسية
+            }
         }
         
         // Initialize Audit System
@@ -263,11 +269,16 @@ class CipherVaultApp {
             console.log('✓ Security audit system initialized');
         }
         
-        // Initialize Web Workers
+        // Initialize Web Workers - مع التحقق من وجود الملف
         if (window.CryptoWorkerManager) {
-            this.components.workers = new window.CryptoWorkerManager();
-            this.state.security.workersAvailable = true;
-            console.log('✓ Web Workers manager initialized');
+            try {
+                this.components.workers = new window.CryptoWorkerManager();
+                this.state.security.workersAvailable = true;
+                console.log('✓ Web Workers manager initialized');
+            } catch (error) {
+                console.warn('Web Workers initialization failed:', error);
+                // استمر بدون Workers
+            }
         }
     }
     
@@ -369,14 +380,18 @@ class CipherVaultApp {
         
         // Initialize Vanilla Tilt for 3D cards
         if (typeof VanillaTilt !== 'undefined') {
-            VanillaTilt.init(document.querySelectorAll('.card-3d'), {
-                max: 15,
-                speed: 400,
-                glare: true,
-                "max-glare": 0.2,
-                scale: 1.02
-            });
-            console.log('✓ 3D card effects initialized');
+            try {
+                VanillaTilt.init(document.querySelectorAll('.card-3d'), {
+                    max: 15,
+                    speed: 400,
+                    glare: true,
+                    "max-glare": 0.2,
+                    scale: 1.02
+                });
+                console.log('✓ 3D card effects initialized');
+            } catch (error) {
+                console.warn('VanillaTilt initialization failed:', error);
+            }
         }
         
         // Setup password strength indicators
@@ -460,7 +475,7 @@ class CipherVaultApp {
             });
         });
         
-        // PWA installation
+        // PWA installation - مع إصلاح خطأ الدالة غير الموجودة
         if (this.ui.elements.installPWA) {
             this.addListener(this.ui.elements.installPWA, 'click', () => {
                 this.installPWA();
@@ -559,17 +574,30 @@ class CipherVaultApp {
         // Update connection status
         this.updateConnectionStatus(navigator.onLine);
         
-        // Check for PWA installation
-        if (this.components.pwa) {
+        // Check for PWA installation - إصلاح الخطأ: showInstallPromptIfNeeded غير موجود
+        if (this.components.pwa && typeof this.components.pwa.showInstallPrompt === 'function') {
             setTimeout(() => {
-                this.components.pwa.showInstallPromptIfNeeded();
+                try {
+                    this.components.pwa.showInstallPrompt();
+                } catch (error) {
+                    console.warn('Failed to show PWA install prompt:', error);
+                }
+            }, 3000);
+        } else if (this.components.pwa && typeof this.components.pwa.promptInstall === 'function') {
+            // محاولة اسم دالة مختلف
+            setTimeout(() => {
+                try {
+                    this.components.pwa.promptInstall();
+                } catch (error) {
+                    console.warn('Failed to show PWA install prompt:', error);
+                }
             }, 3000);
         }
         
         // Log successful initialization
         if (this.components.audit) {
             await this.components.audit.logEvent('APPLICATION_INITIALIZED', 'INFO', {
-                version: '4.1.0',
+                version: '4.2.0',
                 securityLevel: this.state.securityLevel,
                 language: this.state.language
             });
@@ -858,7 +886,7 @@ class CipherVaultApp {
             
             // Log event
             if (this.components.audit) {
-                this.components.audit.logEvent('FILE_SELECTED', 'INFO', {
+                await this.components.audit.logEvent('FILE_SELECTED', 'INFO', {
                     type,
                     fileName: file.name,
                     fileSize: file.size,
@@ -876,10 +904,10 @@ class CipherVaultApp {
      * Validate file
      */
     validateFile(file, type) {
-        // Check file size
-        const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
+        // Check file size - زيادة الحد إلى 10GB حسب طلبك
+        const maxSize = 10 * 1024 * 1024 * 1024; // 10GB
         if (file.size > maxSize) {
-            this.showStatus('error', 'file_too_large', 'File size exceeds 5GB limit');
+            this.showStatus('error', 'file_too_large', 'File size exceeds 10GB limit');
             return false;
         }
         
@@ -1238,7 +1266,7 @@ class CipherVaultApp {
     }
     
     /**
-     * Encrypt large file using streaming/chunks
+     * Encrypt large file using streaming/chunks - محسن للذاكرة
      */
     async encryptLargeFile(file, password, options) {
         // For files larger than 100MB, use chunked encryption
@@ -1263,6 +1291,11 @@ class CipherVaultApp {
             // Update progress
             const progress = Math.round(((i + 1) / totalChunks) * 100);
             this.updateProgress('encrypt', progress);
+            
+            // تنظيف الذاكرة كل 5 أجزاء
+            if (i % 5 === 0) {
+                await new Promise(resolve => setTimeout(resolve, 0)); // إعطاء فرصة للمتصفح
+            }
         }
         
         // Combine all chunks
@@ -1751,13 +1784,23 @@ class CipherVaultApp {
     // ============================================================================
     
     /**
-     * Install PWA
+     * Install PWA - دالة بديلة
      */
     async installPWA() {
         if (!this.components.pwa) return;
         
         try {
-            await this.components.pwa.install();
+            if (typeof this.components.pwa.install === 'function') {
+                await this.components.pwa.install();
+            } else if (window.deferredPrompt) {
+                // استخدام الـ prompt المدمج في المتصفح
+                window.deferredPrompt.prompt();
+                const { outcome } = await window.deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                }
+                window.deferredPrompt = null;
+            }
             this.hidePWAInstallPrompt();
         } catch (error) {
             console.error('PWA installation failed:', error);
@@ -1982,10 +2025,10 @@ class CipherVaultApp {
 // GLOBAL INITIALIZATION
 // ============================================================================
 
-// Create global application instance
+// إنشاء نسخة عالمية من التطبيق
 const App = new CipherVaultApp();
 
-// Initialize when DOM is ready
+// تهيئة عندما يكون DOM جاهزًا
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         App.init().catch(error => {
@@ -1998,17 +2041,48 @@ if (document.readyState === 'loading') {
     });
 }
 
-// Make app available globally
+// جعل التطبيق متاحًا عالميًا
 if (typeof window !== 'undefined') {
     window.CipherVaultApp = App;
 }
 
-// Cleanup on page unload
+// تنظيف عند إغلاق الصفحة
 window.addEventListener('beforeunload', () => {
     App.cleanup();
 });
 
-// Export for ES modules
+// التصدير لـ ES modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { CipherVaultApp, App };
+}
+
+// Performance Monitor Class
+class PerformanceMonitor {
+    constructor() {
+        this.metrics = {
+            memory: [],
+            fps: [],
+            loadTime: performance.now()
+        };
+    }
+    
+    trackMemory() {
+        if (performance.memory) {
+            this.metrics.memory.push(performance.memory.usedJSHeapSize);
+        }
+    }
+    
+    trackFPS(fps) {
+        this.metrics.fps.push(fps);
+    }
+    
+    getAverageFPS() {
+        if (this.metrics.fps.length === 0) return 0;
+        return this.metrics.fps.reduce((a, b) => a + b) / this.metrics.fps.length;
+    }
+    
+    getMemoryUsage() {
+        if (this.metrics.memory.length === 0) return 0;
+        return Math.max(...this.metrics.memory) / (1024 * 1024); // MB
+    }
 }
