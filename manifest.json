@@ -2,16 +2,16 @@
     "name": "CipherVault Pro - Military Encryption",
     "short_name": "CipherVault",
     "description": "Military-grade file encryption with AES-256-GCM, ChaCha20, and zero-knowledge architecture",
-    "start_url": "/",
+    "start_url": "./index.html",
     "display": "standalone",
     "display_override": ["window-controls-overlay", "standalone", "browser"],
     "background_color": "#050510",
     "theme_color": "#00d4ff",
     "orientation": "any",
-    "scope": "/",
-    "id": "/",
+    "scope": "./",
+    "id": "/ciphervault-pro",
     "lang": "en",
-    "dir": "ltr",
+    "dir": "auto",
     "categories": ["security", "productivity", "utilities"],
     "icons": [
         {
@@ -97,7 +97,7 @@
             "name": "Encrypt File",
             "short_name": "Encrypt",
             "description": "Encrypt a new file with military-grade security",
-            "url": "/#encrypt",
+            "url": "./index.html#encrypt",
             "icons": [
                 {
                     "src": "assets/icons/shortcut-encrypt.png",
@@ -110,7 +110,7 @@
             "name": "Decrypt File",
             "short_name": "Decrypt",
             "description": "Decrypt an existing encrypted file",
-            "url": "/#decrypt",
+            "url": "./index.html#decrypt",
             "icons": [
                 {
                     "src": "assets/icons/shortcut-decrypt.png",
@@ -123,7 +123,7 @@
             "name": "Security Audit",
             "short_name": "Audit",
             "description": "View security audit and logs",
-            "url": "/#audit",
+            "url": "./index.html#audit",
             "icons": [
                 {
                     "src": "assets/icons/shortcut-audit.png",
@@ -136,11 +136,7 @@
     "protocol_handlers": [
         {
             "protocol": "web+ciphervault",
-            "url": "/open?file=%s"
-        },
-        {
-            "protocol": "cvault",
-            "url": "/open?file=%s"
+            "url": "./index.html?file=%s"
         }
     ],
     "edge_side_panel": {
@@ -148,16 +144,14 @@
     },
     "permissions": [
         "clipboard-write",
-        "clipboard-read",
         "fileSystem",
         "fileSystem.write"
     ],
     "file_handlers": [
         {
-            "action": "/",
+            "action": "./index.html",
             "accept": {
-                "application/ciphervault": [".cvault", ".cvenc", ".cvmil"],
-                "application/octet-stream": [".encrypted", ".secure"]
+                "application/ciphervault": [".cvault", ".cvenc", ".cvmil"]
             },
             "icons": [
                 {
@@ -174,27 +168,21 @@
     "prefer_related_applications": false,
     "related_applications": [],
     "share_target": {
-        "action": "/share",
-        "method": "POST",
-        "enctype": "multipart/form-data",
+        "action": "./index.html",
+        "method": "GET",
+        "enctype": "application/x-www-form-urlencoded",
         "params": {
             "title": "name",
             "text": "description",
-            "url": "link",
-            "files": [
-                {
-                    "name": "encrypted_files",
-                    "accept": ["application/ciphervault", "application/octet-stream"]
-                }
-            ]
+            "url": "link"
         }
     },
     "capture_links": "none",
     "background": {
-        "scripts": ["assets/js/background.js"],
+        "service_worker": "assets/js/background.js",
         "type": "module"
     },
     "offline_enabled": true,
-    "version": "4.1.0",
+    "version": "4.2.0",
     "author": "CipherVault Security Team"
 }
