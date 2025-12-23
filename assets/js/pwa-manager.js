@@ -1,6 +1,6 @@
 /**
  * CipherVault 3D Pro - مدير التطبيق التقدمي المحسن
- * الإصدار: 4.2.0
+ * الإصدار: 4.3.0 - Enhanced Security Edition
  */
 
 class EnhancedPWAManager {
@@ -11,17 +11,21 @@ class EnhancedPWAManager {
         this.updateAvailable = false;
         this.serviceWorker = null;
         this.offlineMode = false;
+        this.hiddenStart = null;
+        
+        // تهيئة المكونات
+        this.components = {};
         
         this.config = {
-            CACHE_NAME: 'ciphervault-pro-v4.2',
-            OFFLINE_CACHE: 'ciphervault-offline-v4.2',
-            CACHE_VERSION: '4.2.0',
+            CACHE_NAME: 'ciphervault-pro-v4.3',
+            OFFLINE_CACHE: 'ciphervault-offline-v4.3',
+            CACHE_VERSION: '4.3.0',
             PRECACHE_FILES: [
                 '/',
                 '/index.html',
                 '/manifest.json',
                 '/assets/css/main.css',
-                '/assets/css/dark-mode.css',
+                '/assets/css/style.css', // استخدام style.css بدلاً من dark-mode.css
                 '/assets/js/main.js',
                 '/assets/js/crypto-core.js',
                 '/assets/js/config.js',
@@ -39,45 +43,73 @@ class EnhancedPWAManager {
             ],
             SYNC_TAG: 'ciphervault-sync',
             BACKGROUND_SYNC_ENABLED: true,
-            PUSH_NOTIFICATIONS_ENABLED: true,
-            OFFLINE_RETRY_LIMIT: 3
+            PUSH_NOTIFICATIONS_ENABLED: false, // معطلة مؤقتاً للأمان
+            OFFLINE_RETRY_LIMIT: 3,
+            PROMPT_DELAY_DAYS: 7 // أيام الانتظار قبل إعادة عرض موجه التثبيت
         };
         
         this.init();
     }
     
     async init() {
-        // التحقق من وضع التركيب
-        this.checkInstallStatus();
+        console.log('Initializing Enhanced PWA Manager for CipherVault...');
         
-        // تسجيل Service Worker
-        await this.registerServiceWorker();
-        
-        // إعداد مستمعات الأحداث
-        this.setupEventListeners();
-        
-        // التحقق من التحديثات
-        await this.checkForUpdates();
-        
-        // إعداد وضع عدم الاتصال
-        this.setupOfflineMode();
-        
-        console.log('Enhanced PWA Manager initialized');
+        try {
+            // التحقق من وضع التركيب
+            this.checkInstallStatus();
+            
+            // تسجيل Service Worker
+            await this.registerServiceWorker();
+            
+            // إعداد مستمعات الأحداث
+            this.setupEventListeners();
+            
+            // التحقق من التحديثات
+            await this.checkForUpdates();
+            
+            // إعداد وضع عدم الاتصال
+            this.setupOfflineMode();
+            
+            // استعادة حالة التطبيق
+            await this.restoreAppState();
+            
+            console.log('Enhanced PWA Manager initialized successfully');
+            
+            // تسجيل حدث التهيئة
+            this.logEvent('PWA_MANAGER_INITIALIZED', 'INFO', {
+                version: this.config.CACHE_VERSION,
+                installed: this.installed,
+                standalone: this.standalone
+            });
+            
+        } catch (error) {
+            console.error('Failed to initialize PWA Manager:', error);
+            this.logEvent('PWA_MANAGER_INIT_FAILED', 'ERROR', {
+                error: error.message,
+                stack: error.stack
+            });
+        }
     }
     
+    /**
+     * التحقق من وجود ملف على الخادم
+     */
     async checkFileExists(url) {
         try {
             const response = await fetch(url, {
                 method: 'HEAD',
                 cache: 'no-store',
-                signal: AbortSignal.timeout(3000)
+                signal: AbortSignal.timeout(5000)
             });
             return response.ok;
-        } catch {
+        } catch (error) {
             return false;
         }
     }
     
+    /**
+     * التحقق من حالة التثبيت
+     */
     checkInstallStatus() {
         this.installed = window.matchMedia('(display-mode: standalone)').matches || 
                         window.navigator.standalone ||
@@ -88,34 +120,47 @@ class EnhancedPWAManager {
         if (this.installed) {
             this.logEvent('PWA_INSTALLED', 'INFO', {
                 displayMode: this.standalone ? 'standalone' : 'browser',
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                userAgent: navigator.userAgent
             });
         }
     }
     
+    /**
+     * تسجيل Service Worker مع معالجة أخطاء محسنة
+     */
     async registerServiceWorker() {
         if (!('serviceWorker' in navigator)) {
-            console.warn('Service Workers not supported');
+            console.warn('Service Workers not supported in this browser');
+            this.logEvent('SERVICE_WORKER_UNSUPPORTED', 'WARNING', {
+                browser: navigator.userAgent
+            });
             return;
         }
         
         // التحقق من وجود ملف service-worker.js
-        const swExists = await this.checkFileExists('/service-worker.js');
+        const swPath = '/service-worker.js';
+        const swExists = await this.checkFileExists(swPath);
+        
         if (!swExists) {
-            console.warn('Service Worker file not found, skipping registration');
+            console.warn('Service Worker file not found, creating basic service worker');
             this.logEvent('SERVICE_WORKER_MISSING', 'WARNING', {
+                path: swPath,
                 message: 'service-worker.js file not found on server'
             });
+            
+            // إنشاء Service Worker أساسي تلقائياً
+            await this.createBasicServiceWorker();
             return;
         }
         
         try {
-            this.serviceWorker = await navigator.serviceWorker.register('/service-worker.js', {
+            this.serviceWorker = await navigator.serviceWorker.register(swPath, {
                 scope: '/',
                 updateViaCache: 'none'
             });
             
-            console.log('Service Worker registered:', this.serviceWorker);
+            console.log('Service Worker registered successfully:', this.serviceWorker);
             
             // الاستماع لتحديث Service Worker
             this.serviceWorker.addEventListener('updatefound', () => {
@@ -123,71 +168,195 @@ class EnhancedPWAManager {
                 console.log('New Service Worker found:', newWorker);
                 
                 newWorker.addEventListener('statechange', () => {
+                    console.log(`Service Worker state changed: ${newWorker.state}`);
+                    
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                         this.updateAvailable = true;
                         this.showUpdateNotification();
+                        
+                        this.logEvent('SERVICE_WORKER_UPDATE_AVAILABLE', 'INFO', {
+                            newState: newWorker.state,
+                            timestamp: Date.now()
+                        });
                     }
                 });
             });
             
+            // مراقبة حالة Service Worker
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.addEventListener('statechange', (event) => {
+                    console.log('Controller state changed:', event.target.state);
+                });
+            }
+            
             // التحقق من التحديثات بشكل دوري
-            setInterval(() => this.checkForUpdates(), 60 * 60 * 1000); // كل ساعة
+            setInterval(() => this.checkForUpdates(), 30 * 60 * 1000); // كل 30 دقيقة
             
             this.logEvent('SERVICE_WORKER_REGISTERED', 'INFO', {
                 scope: this.serviceWorker.scope,
-                version: this.config.CACHE_VERSION
+                version: this.config.CACHE_VERSION,
+                timestamp: Date.now()
             });
             
         } catch (error) {
             console.error('Service Worker registration failed:', error);
-            this.logEvent('SERVICE_WORKER_FAILED', 'ERROR', {
+            this.logEvent('SERVICE_WORKER_REGISTRATION_FAILED', 'ERROR', {
+                error: error.message,
+                errorName: error.name,
+                timestamp: Date.now()
+            });
+            
+            // محاولة إنشاء Service Worker أساسي كحل بديل
+            await this.createBasicServiceWorker();
+        }
+    }
+    
+    /**
+     * إنشاء Service Worker أساسي عند فشل التسجيل
+     */
+    async createBasicServiceWorker() {
+        try {
+            // إنشاء Service Worker بسيط في الذاكرة
+            const swCode = `
+                // Service Worker الأساسي لـ CipherVault
+                const CACHE_NAME = '${this.config.CACHE_NAME}-basic';
+                const OFFLINE_URL = '/offline.html';
+                
+                self.addEventListener('install', (event) => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME).then((cache) => {
+                            return cache.addAll([
+                                '/',
+                                '/index.html',
+                                '/manifest.json'
+                            ]);
+                        })
+                    );
+                });
+                
+                self.addEventListener('fetch', (event) => {
+                    event.respondWith(
+                        caches.match(event.request).then((response) => {
+                            return response || fetch(event.request).catch(() => {
+                                return caches.match(OFFLINE_URL);
+                            });
+                        })
+                    );
+                });
+                
+                self.addEventListener('activate', (event) => {
+                    event.waitUntil(
+                        caches.keys().then((cacheNames) => {
+                            return Promise.all(
+                                cacheNames.map((cacheName) => {
+                                    if (cacheName !== CACHE_NAME) {
+                                        return caches.delete(cacheName);
+                                    }
+                                })
+                            );
+                        })
+                    );
+                });
+            `;
+            
+            // إنشاء blob من الكود
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swURL = URL.createObjectURL(blob);
+            
+            // تسجيل Service Worker من الـ blob
+            this.serviceWorker = await navigator.serviceWorker.register(swURL, {
+                scope: '/'
+            });
+            
+            console.log('Basic Service Worker registered as fallback');
+            
+            this.logEvent('BASIC_SERVICE_WORKER_CREATED', 'INFO', {
+                timestamp: Date.now(),
+                type: 'fallback'
+            });
+            
+        } catch (error) {
+            console.error('Failed to create basic Service Worker:', error);
+            this.logEvent('BASIC_SERVICE_WORKER_FAILED', 'ERROR', {
                 error: error.message
             });
         }
     }
     
+    /**
+     * التحقق من التحديثات
+     */
     async checkForUpdates() {
-        if (!this.serviceWorker) return;
+        if (!this.serviceWorker) {
+            console.log('No Service Worker available for update check');
+            return;
+        }
         
         try {
-            await this.serviceWorker.update();
-            
-            // التحقق من وجود تحديثات للتطبيق
-            const response = await fetch('/manifest.json', {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache'
+            // تحديث Service Worker
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (registration) {
+                await registration.update();
+                
+                // التحقق من تحديثات التطبيق
+                const response = await fetch('/manifest.json', {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    },
+                    signal: AbortSignal.timeout(10000) // مهلة 10 ثواني
+                });
+                
+                if (response.ok) {
+                    const manifest = await response.json();
+                    const currentVersion = this.config.CACHE_VERSION;
+                    
+                    if (manifest.version && manifest.version !== currentVersion) {
+                        console.log(`New version available: ${manifest.version}`);
+                        this.showUpdateNotification(manifest.version);
+                    }
                 }
-            });
-            
-            const manifest = await response.json();
-            const currentVersion = '4.2.0';
-            
-            if (manifest.version !== currentVersion) {
-                this.showUpdateNotification(manifest.version);
             }
             
         } catch (error) {
             console.warn('Update check failed:', error);
+            this.logEvent('UPDATE_CHECK_FAILED', 'WARNING', {
+                error: error.message,
+                errorType: error.name,
+                timestamp: Date.now()
+            });
         }
     }
     
+    /**
+     * إعداد مستمعات الأحداث
+     */
     setupEventListeners() {
         // حدث تثبيت PWA
         window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('beforeinstallprompt event fired');
             e.preventDefault();
             this.deferredPrompt = e;
-            this.showInstallPrompt();
+            
+            // عرض موجه التثبيت بعد تأخير قصير
+            setTimeout(() => {
+                this.showInstallPromptIfNeeded();
+            }, 3000);
         });
         
         // حدث بعد التثبيت
         window.addEventListener('appinstalled', () => {
+            console.log('PWA installed successfully');
             this.installed = true;
             this.deferredPrompt = null;
+            
             this.logEvent('PWA_INSTALLED_SUCCESS', 'INFO', {
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                displayMode: this.getDisplayMode()
             });
-            this.showNotification('تم تثبيت التطبيق بنجاح!', 'success');
+            
+            this.showNotification('تم تثبيت CipherVault بنجاح!', 'success');
         });
         
         // أحداث Service Worker
@@ -195,6 +364,10 @@ class EnhancedPWAManager {
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 console.log('Service Worker controller changed');
                 this.showNotification('تم تحديث التطبيق. أعد التحميل للاستفادة من الميزات الجديدة.', 'info');
+                
+                this.logEvent('SERVICE_WORKER_CONTROLLER_CHANGED', 'INFO', {
+                    timestamp: Date.now()
+                });
             });
             
             navigator.serviceWorker.addEventListener('message', (event) => {
@@ -221,10 +394,21 @@ class EnhancedPWAManager {
                 this.handleAppHidden();
             }
         });
+        
+        // حدث قبل إغلاق الصفحة
+        window.addEventListener('beforeunload', () => {
+            this.saveAppState();
+        });
     }
     
+    /**
+     * إعداد وضع عدم الاتصال
+     */
     setupOfflineMode() {
-        if (!('caches' in window)) return;
+        if (!('caches' in window)) {
+            console.warn('Cache API not supported');
+            return;
+        }
         
         // إنشاء ذاكرة تخزين مؤقت للمحتوى غير المتصل
         this.createOfflineCache();
@@ -233,140 +417,313 @@ class EnhancedPWAManager {
         this.setupConnectionCheck();
     }
     
+    /**
+     * إنشاء ذاكرة التخزين المؤقت للمحتوى غير المتصل
+     */
     async createOfflineCache() {
         try {
             const cache = await caches.open(this.config.OFFLINE_CACHE);
             
-            // تخزين الصفحة غير المتصلة
-            const offlinePage = `
-                <!DOCTYPE html>
-                <html lang="ar">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>CipherVault - غير متصل</title>
-                    <style>
-                        body {
-                            font-family: 'Cairo', sans-serif;
-                            background: linear-gradient(135deg, #0a0a1a, #050510);
-                            color: white;
-                            height: 100vh;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            text-align: center;
-                            padding: 20px;
-                        }
-                        
-                        .offline-container {
-                            max-width: 500px;
-                            padding: 40px;
-                            background: rgba(10, 15, 35, 0.9);
-                            border-radius: 20px;
-                            border: 2px solid #00d4ff;
-                            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
-                        }
-                        
-                        .offline-icon {
-                            font-size: 64px;
-                            color: #ff4757;
-                            margin-bottom: 20px;
-                        }
-                        
-                        h1 {
-                            color: #00d4ff;
-                            margin-bottom: 20px;
-                        }
-                        
-                        p {
-                            color: #8a8aa3;
-                            margin-bottom: 30px;
-                            line-height: 1.6;
-                        }
-                        
-                        .features {
-                            text-align: right;
-                            margin: 30px 0;
-                        }
-                        
-                        .feature {
-                            padding: 10px;
-                            background: rgba(0, 212, 255, 0.1);
-                            margin: 10px 0;
-                            border-radius: 8px;
-                            border-right: 3px solid #00d4ff;
-                        }
-                        
-                        button {
-                            background: linear-gradient(135deg, #00d4ff, #0099cc);
-                            color: white;
-                            border: none;
-                            padding: 15px 30px;
-                            border-radius: 10px;
-                            font-family: 'Cairo', sans-serif;
-                            font-size: 16px;
-                            cursor: pointer;
-                            transition: transform 0.2s;
-                        }
-                        
-                        button:hover {
-                            transform: translateY(-2px);
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="offline-container">
-                        <div class="offline-icon">
-                            <i class="fas fa-wifi-slash"></i>
-                        </div>
-                        <h1>أنت غير متصل بالإنترنت</h1>
-                        <p>لا يمكن الوصول إلى CipherVault حالياً بسبب فقدان الاتصال بالإنترنت.</p>
-                        
-                        <div class="features">
-                            <div class="feature">✓ يمكنك عرض الملفات المشفرة المحفوظة</div>
-                            <div class="feature">✓ يمكنك تشفير الملفات الجديدة (سيتم حفظها محلياً)</div>
-                            <div class="feature">✓ يمكنك فك تشفير الملفات المحفوظة</div>
-                        </div>
-                        
-                        <button onclick="window.location.reload()">إعادة المحاولة</button>
-                    </div>
-                </body>
-                </html>
-            `;
+            // التحقق من الملفات المطلوبة
+            const filesToCache = [];
+            for (const file of this.config.PRECACHE_FILES) {
+                const exists = await this.checkFileExists(file);
+                if (exists) {
+                    filesToCache.push(file);
+                } else {
+                    console.warn(`File not found, skipping cache: ${file}`);
+                }
+            }
             
+            // إضافة الصفحة غير المتصلة
+            const offlinePage = this.createOfflinePage();
             await cache.put('/offline.html', new Response(offlinePage, {
-                headers: { 'Content-Type': 'text/html' }
+                headers: { 
+                    'Content-Type': 'text/html',
+                    'Cache-Control': 'no-cache'
+                }
             }));
             
-            console.log('Offline cache created');
+            // تخزين الملفات الأساسية
+            if (filesToCache.length > 0) {
+                await cache.addAll(filesToCache);
+            }
+            
+            console.log(`Offline cache created with ${filesToCache.length} files`);
+            
+            this.logEvent('OFFLINE_CACHE_CREATED', 'INFO', {
+                filesCount: filesToCache.length,
+                cacheName: this.config.OFFLINE_CACHE,
+                timestamp: Date.now()
+            });
             
         } catch (error) {
             console.error('Failed to create offline cache:', error);
+            this.logEvent('OFFLINE_CACHE_FAILED', 'ERROR', {
+                error: error.message
+            });
         }
     }
     
+    /**
+     * إنشاء صفحة وضع عدم الاتصال
+     */
+    createOfflinePage() {
+        return `
+            <!DOCTYPE html>
+            <html lang="ar" dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>CipherVault - وضع عدم الاتصال</title>
+                <style>
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                        font-family: 'Cairo', sans-serif;
+                    }
+                    
+                    body {
+                        background: linear-gradient(135deg, #050510 0%, #0a1a2a 100%);
+                        color: #ffffff;
+                        min-height: 100vh;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 20px;
+                        text-align: center;
+                        line-height: 1.6;
+                    }
+                    
+                    .offline-container {
+                        max-width: 600px;
+                        width: 100%;
+                        padding: 40px 30px;
+                        background: rgba(10, 15, 35, 0.95);
+                        border-radius: 20px;
+                        border: 2px solid #00d4ff;
+                        box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+                        backdrop-filter: blur(10px);
+                    }
+                    
+                    .offline-icon {
+                        font-size: 80px;
+                        color: #ff4757;
+                        margin-bottom: 25px;
+                        animation: pulse 2s infinite;
+                    }
+                    
+                    h1 {
+                        color: #00d4ff;
+                        margin-bottom: 20px;
+                        font-size: 2.2rem;
+                        font-family: 'Orbitron', sans-serif;
+                    }
+                    
+                    .subtitle {
+                        color: #8a8aa3;
+                        font-size: 1.1rem;
+                        margin-bottom: 30px;
+                    }
+                    
+                    .features {
+                        text-align: right;
+                        margin: 35px 0;
+                        background: rgba(0, 212, 255, 0.05);
+                        padding: 25px;
+                        border-radius: 15px;
+                        border-right: 3px solid #00d4ff;
+                    }
+                    
+                    .feature {
+                        padding: 12px 15px;
+                        background: rgba(0, 212, 255, 0.1);
+                        margin: 12px 0;
+                        border-radius: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        transition: transform 0.3s;
+                    }
+                    
+                    .feature:hover {
+                        transform: translateX(-10px);
+                    }
+                    
+                    .feature i {
+                        color: #00ff88;
+                        font-size: 1.2rem;
+                        margin-left: 15px;
+                    }
+                    
+                    .feature span {
+                        color: #ffffff;
+                        font-size: 1rem;
+                    }
+                    
+                    .buttons {
+                        display: flex;
+                        gap: 15px;
+                        justify-content: center;
+                        margin-top: 30px;
+                        flex-wrap: wrap;
+                    }
+                    
+                    .btn {
+                        padding: 15px 30px;
+                        border-radius: 12px;
+                        font-family: 'Orbitron', sans-serif;
+                        font-size: 1rem;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        border: none;
+                        min-width: 180px;
+                        letter-spacing: 1px;
+                    }
+                    
+                    .btn-primary {
+                        background: linear-gradient(135deg, #00d4ff, #0099cc);
+                        color: white;
+                    }
+                    
+                    .btn-primary:hover {
+                        transform: translateY(-3px);
+                        box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+                    }
+                    
+                    .btn-secondary {
+                        background: transparent;
+                        color: #8a8aa3;
+                        border: 2px solid #8a8aa3;
+                    }
+                    
+                    .btn-secondary:hover {
+                        color: #ffffff;
+                        border-color: #ffffff;
+                    }
+                    
+                    .status {
+                        margin-top: 25px;
+                        color: #8a8aa3;
+                        font-size: 0.9rem;
+                    }
+                    
+                    @keyframes pulse {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.6; }
+                    }
+                    
+                    @media (max-width: 768px) {
+                        .offline-container {
+                            padding: 30px 20px;
+                        }
+                        
+                        .offline-icon {
+                            font-size: 60px;
+                        }
+                        
+                        h1 {
+                            font-size: 1.8rem;
+                        }
+                        
+                        .btn {
+                            min-width: 150px;
+                            padding: 12px 25px;
+                        }
+                    }
+                </style>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
+            </head>
+            <body>
+                <div class="offline-container">
+                    <div class="offline-icon">
+                        <i class="fas fa-wifi-slash"></i>
+                    </div>
+                    <h1>أنت غير متصل بالإنترنت</h1>
+                    <p class="subtitle">فقدت الاتصال بالشبكة، لكن يمكنك الاستمرار في استخدام الميزات المحلية</p>
+                    
+                    <div class="features">
+                        <div class="feature">
+                            <span>عرض الملفات المشفرة المحفوظة محلياً</span>
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="feature">
+                            <span>تشفير الملفات الجديدة وحفظها محلياً</span>
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="feature">
+                            <span>فك تشفير الملفات المحفوظة سابقاً</span>
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <div class="feature">
+                            <span>الوصول إلى جميع وظائف التشفير الأساسية</span>
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="buttons">
+                        <button class="btn btn-primary" onclick="window.location.reload()">
+                            <i class="fas fa-redo"></i> إعادة المحاولة
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.history.back()">
+                            <i class="fas fa-arrow-right"></i> العودة
+                        </button>
+                    </div>
+                    
+                    <div class="status">
+                        <i class="fas fa-info-circle"></i>
+                        جميع البيانات المشفرة محفوظة بأمان على جهازك
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+    
+    /**
+     * إعداد فحص الاتصال
+     */
     setupConnectionCheck() {
+        // التحقق المبدئي
+        this.offlineMode = !navigator.onLine;
+        this.updateConnectionStatus();
+        
         // فحص الاتصال بشكل دوري
         setInterval(async () => {
             try {
-                const response = await fetch('/', {
+                const response = await fetch('/health-check', {
                     method: 'HEAD',
                     cache: 'no-store',
-                    signal: AbortSignal.timeout(5000)
-                });
+                    signal: AbortSignal.timeout(3000)
+                }).catch(() => null);
                 
-                this.offlineMode = !response.ok;
+                this.offlineMode = !response || !response.ok;
+                this.updateConnectionStatus();
+                
             } catch (error) {
                 this.offlineMode = true;
+                this.updateConnectionStatus();
             }
-            
-            this.updateConnectionStatus();
         }, 30000); // كل 30 ثانية
     }
     
+    /**
+     * تحديث حالة الاتصال في واجهة المستخدم
+     */
     updateConnectionStatus() {
-        const statusElement = document.getElementById('connectionStatus');
-        const iconElement = document.getElementById('connectionIcon');
+        // البحث عن عناصر حالة الاتصال
+        let statusElement = document.getElementById('connectionStatus');
+        let iconElement = document.getElementById('connectionIcon');
+        
+        // إنشاء العناصر إذا لم تكن موجودة
+        if (!statusElement || !iconElement) {
+            this.createConnectionStatusElement();
+            statusElement = document.getElementById('connectionStatus');
+            iconElement = document.getElementById('connectionIcon');
+        }
         
         if (!statusElement || !iconElement) return;
         
@@ -375,48 +732,169 @@ class EnhancedPWAManager {
             statusElement.style.color = '#ff4757';
             iconElement.className = 'fas fa-wifi-slash';
             iconElement.style.color = '#ff4757';
+            
+            // إضافة فئة للإشارة إلى وضع عدم الاتصال
+            statusElement.classList.add('offline');
+            statusElement.classList.remove('online');
         } else {
             statusElement.textContent = 'متصل';
             statusElement.style.color = '#00ff88';
             iconElement.className = 'fas fa-wifi';
             iconElement.style.color = '#00ff88';
+            
+            // إضافة فئة للإشارة إلى وضع الاتصال
+            statusElement.classList.add('online');
+            statusElement.classList.remove('offline');
         }
     }
     
+    /**
+     * إنشاء عنصر حالة الاتصال في واجهة المستخدم
+     */
+    createConnectionStatusElement() {
+        // التحقق مما إذا كان العنصر موجوداً بالفعل
+        if (document.getElementById('connectionStatusContainer')) return;
+        
+        // إنشاء حاوية حالة الاتصال
+        const container = document.createElement('div');
+        container.id = 'connectionStatusContainer';
+        container.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 9990;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background: rgba(10, 15, 35, 0.9);
+            border-radius: 20px;
+            border: 2px solid;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        `;
+        
+        // إنشاء الأيقونة
+        const icon = document.createElement('i');
+        icon.id = 'connectionIcon';
+        icon.style.cssText = 'font-size: 16px;';
+        
+        // إنشاء النص
+        const text = document.createElement('span');
+        text.id = 'connectionStatus';
+        
+        // إضافة العناصر إلى الحاوية
+        container.appendChild(icon);
+        container.appendChild(text);
+        
+        // إضافة الحاوية إلى body
+        document.body.appendChild(container);
+        
+        // تحديث الحالة
+        this.updateConnectionStatus();
+    }
+    
+    /**
+     * عرض موجه التثبيت إذا لزم الأمر - الدالة المطلوبة من main.js
+     */
+    showInstallPromptIfNeeded() {
+        // التحقق مما إذا كان التطبيق مثبتاً بالفعل
+        if (this.installed) {
+            console.log('App already installed, skipping prompt');
+            return false;
+        }
+        
+        // التحقق من وجود deferredPrompt
+        if (!this.deferredPrompt) {
+            console.log('No deferred prompt available');
+            return false;
+        }
+        
+        // التحقق مما إذا كان المستخدم قد رفض العرض مؤخراً
+        const lastDismissed = localStorage.getItem('pwa_prompt_dismissed');
+        if (lastDismissed) {
+            const dismissedTime = parseInt(lastDismissed, 10);
+            const daysSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60 * 24);
+            
+            // إذا مر أقل من الأيام المحددة في الإعدادات، لا نعرض العرض
+            if (daysSinceDismissed < this.config.PROMPT_DELAY_DAYS) {
+                console.log(`Prompt dismissed ${daysSinceDismissed.toFixed(1)} days ago, waiting`);
+                return false;
+            }
+        }
+        
+        // عرض موجه التثبيت
+        this.showInstallPrompt();
+        return true;
+    }
+    
+    /**
+     * عرض موجه التثبيت
+     */
     showInstallPrompt() {
-        if (this.installed || !this.deferredPrompt) return;
+        if (this.installed || !this.deferredPrompt) {
+            console.log('Cannot show install prompt: installed=', this.installed, 'deferredPrompt=', !!this.deferredPrompt);
+            return;
+        }
         
         // إنشاء نافذة تثبيت مخصصة
         const installPrompt = document.createElement('div');
-        installPrompt.className = 'pwa-install-prompt show';
+        installPrompt.id = 'pwaInstallPrompt';
+        installPrompt.className = 'pwa-install-prompt';
         installPrompt.innerHTML = `
-            <div class="pwa-content">
-                <div class="pwa-icon">
-                    <i class="fas fa-download"></i>
+            <div class="pwa-prompt-content">
+                <div class="pwa-prompt-header">
+                    <div class="pwa-prompt-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <button class="pwa-prompt-close" id="pwaPromptClose">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <div class="pwa-info">
-                    <h4>تثبيت CipherVault Pro</h4>
-                    <p>ثبِّت التطبيق للحصول على تجربة أفضل ووصول دون اتصال</p>
-                    <div class="pwa-features">
-                        <span><i class="fas fa-bolt"></i> أسرع تحميل</span>
-                        <span><i class="fas fa-shield-alt"></i> أمان محسّن</span>
-                        <span><i class="fas fa-desktop"></i> تجربة كالتطبيق</span>
+                
+                <div class="pwa-prompt-body">
+                    <h3 class="pwa-prompt-title">تثبيت CipherVault Pro</h3>
+                    <p class="pwa-prompt-description">
+                        ثبّت التطبيق للحصول على تجربة تشفير محسنة وأداء أسرع
+                    </p>
+                    
+                    <div class="pwa-prompt-features">
+                        <div class="pwa-feature">
+                            <i class="fas fa-bolt"></i>
+                            <span>تحميل فوري</span>
+                        </div>
+                        <div class="pwa-feature">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>حماية متقدمة</span>
+                        </div>
+                        <div class="pwa-feature">
+                            <i class="fas fa-desktop"></i>
+                            <span>واجهة تطبيق كاملة</span>
+                        </div>
+                        <div class="pwa-feature">
+                            <i class="fas fa-database"></i>
+                            <span>عمل دون اتصال</span>
+                        </div>
                     </div>
                 </div>
-                <div class="pwa-actions">
-                    <button class="btn-pwa-install" id="installPWA">
-                        <i class="fas fa-plus-circle"></i> تثبيت
+                
+                <div class="pwa-prompt-footer">
+                    <button class="pwa-prompt-button pwa-prompt-install" id="pwaPromptInstall">
+                        <i class="fas fa-download"></i>
+                        تثبيت التطبيق
                     </button>
-                    <button class="btn-pwa-dismiss" id="dismissPWA">
-                        لاحقاً
+                    <button class="pwa-prompt-button pwa-prompt-dismiss" id="pwaPromptDismiss">
+                        ربما لاحقاً
                     </button>
                 </div>
             </div>
         `;
         
-        document.body.appendChild(installPrompt);
-        
-        // إضافة الأنماط
+        // إضافة الأنماط إذا لم تكن موجودة
         if (!document.querySelector('#pwa-prompt-styles')) {
             const styles = document.createElement('style');
             styles.id = 'pwa-prompt-styles';
@@ -425,126 +903,625 @@ class EnhancedPWAManager {
                     position: fixed;
                     bottom: 30px;
                     right: 30px;
-                    background: var(--card-bg);
-                    border: 3px solid var(--primary);
-                    border-radius: var(--radius-xl);
-                    padding: 25px;
                     z-index: 10000;
-                    box-shadow: var(--shadow-heavy), var(--card-glow);
-                    display: none;
-                    animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                    max-width: 450px;
+                    animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    font-family: 'Cairo', 'Orbitron', sans-serif;
+                }
+                
+                .pwa-prompt-content {
+                    background: linear-gradient(135deg, rgba(10, 15, 35, 0.95), rgba(5, 10, 25, 0.98));
+                    border: 3px solid #00d4ff;
+                    border-radius: 20px;
+                    padding: 25px;
+                    width: 380px;
+                    max-width: 90vw;
                     backdrop-filter: blur(20px);
+                    box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3),
+                                0 0 60px rgba(0, 212, 255, 0.15);
                 }
                 
-                .pwa-install-prompt.show {
-                    display: block;
-                }
-                
-                .pwa-content {
+                .pwa-prompt-header {
                     display: flex;
-                    flex-direction: column;
-                    gap: 20px;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
                 }
                 
-                .pwa-icon {
-                    width: 60px;
-                    height: 60px;
-                    background: linear-gradient(135deg, var(--primary), var(--accent));
-                    border-radius: 15px;
+                .pwa-prompt-icon {
+                    width: 50px;
+                    height: 50px;
+                    background: linear-gradient(135deg, #00d4ff, #0099cc);
+                    border-radius: 12px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 28px;
+                    font-size: 24px;
                     color: white;
-                    margin: 0 auto;
                 }
                 
-                .pwa-info {
+                .pwa-prompt-close {
+                    background: transparent;
+                    border: none;
+                    color: #8a8aa3;
+                    font-size: 20px;
+                    cursor: pointer;
+                    transition: color 0.3s;
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .pwa-prompt-close:hover {
+                    color: #ff4757;
+                    background: rgba(255, 71, 87, 0.1);
+                }
+                
+                .pwa-prompt-title {
+                    color: #ffffff;
+                    font-family: 'Orbitron', sans-serif;
+                    font-size: 1.4rem;
+                    margin-bottom: 10px;
                     text-align: center;
                 }
                 
-                .pwa-info h4 {
-                    font-family: 'Orbitron', sans-serif;
-                    color: var(--light);
-                    margin-bottom: 10px;
-                    font-size: 1.3rem;
-                }
-                
-                .pwa-info p {
-                    color: var(--gray);
+                .pwa-prompt-description {
+                    color: #8a8aa3;
                     font-size: 0.95rem;
                     line-height: 1.5;
-                    margin-bottom: 15px;
+                    margin-bottom: 25px;
+                    text-align: center;
                 }
                 
-                .pwa-features {
-                    display: flex;
-                    justify-content: center;
-                    gap: 15px;
-                    flex-wrap: wrap;
-                    margin: 15px 0;
+                .pwa-prompt-features {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 12px;
+                    margin-bottom: 25px;
                 }
                 
-                .pwa-features span {
+                .pwa-feature {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                    font-size: 0.85rem;
-                    color: var(--primary-light);
-                    background: rgba(0, 212, 255, 0.1);
-                    padding: 6px 12px;
-                    border-radius: 20px;
+                    gap: 10px;
+                    padding: 12px;
+                    background: rgba(0, 212, 255, 0.08);
+                    border-radius: 10px;
+                    border: 1px solid rgba(0, 212, 255, 0.2);
+                    transition: all 0.3s;
                 }
                 
-                .pwa-features i {
+                .pwa-feature:hover {
+                    background: rgba(0, 212, 255, 0.15);
+                    transform: translateY(-2px);
+                }
+                
+                .pwa-feature i {
+                    color: #00d4ff;
+                    font-size: 1.1rem;
+                }
+                
+                .pwa-feature span {
+                    color: #ffffff;
                     font-size: 0.9rem;
+                    font-weight: 600;
                 }
                 
-                .pwa-actions {
+                .pwa-prompt-footer {
                     display: flex;
-                    gap: 10px;
+                    gap: 12px;
                 }
                 
-                .btn-pwa-install {
-                    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-                    color: white;
-                    border: none;
-                    border-radius: var(--radius-lg);
-                    padding: 12px 20px;
+                .pwa-prompt-button {
+                    flex: 1;
+                    padding: 14px 20px;
+                    border-radius: 12px;
                     font-family: 'Orbitron', sans-serif;
+                    font-size: 0.95rem;
                     font-weight: 600;
                     cursor: pointer;
-                    transition: var(--transition-normal);
+                    transition: all 0.3s;
+                    border: none;
+                    letter-spacing: 0.5px;
+                }
+                
+                .pwa-prompt-install {
+                    background: linear-gradient(135deg, #00d4ff, #0099cc);
+                    color: white;
+                }
+                
+                .pwa-prompt-install:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+                }
+                
+                .pwa-prompt-dismiss {
+                    background: transparent;
+                    color: #8a8aa3;
+                    border: 2px solid #8a8aa3;
+                }
+                
+                .pwa-prompt-dismiss:hover {
+                    color: #ffffff;
+                    border-color: #ffffff;
+                }
+                
+                @keyframes slideInRight {
+                    from {
+                        opacity: 0;
+                        transform: translateX(50px) scale(0.9);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(0) scale(1);
+                    }
+                }
+                
+                @keyframes slideOutRight {
+                    from {
+                        opacity: 1;
+                        transform: translateX(0) scale(1);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateX(50px) scale(0.9);
+                    }
+                }
+                
+                .pwa-install-prompt.hiding {
+                    animation: slideOutRight 0.3s ease forwards;
+                }
+                
+                @media (max-width: 768px) {
+                    .pwa-install-prompt {
+                        bottom: 20px;
+                        right: 20px;
+                        left: 20px;
+                        width: auto;
+                    }
+                    
+                    .pwa-prompt-content {
+                        width: 100%;
+                        padding: 20px;
+                    }
+                    
+                    .pwa-prompt-features {
+                        grid-template-columns: 1fr;
+                    }
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+        
+        // إضافة النافذة إلى body
+        document.body.appendChild(installPrompt);
+        
+        // إضافة معالجات الأحداث
+        const closeBtn = installPrompt.querySelector('#pwaPromptClose');
+        const dismissBtn = installPrompt.querySelector('#pwaPromptDismiss');
+        const installBtn = installPrompt.querySelector('#pwaPromptInstall');
+        
+        // إغلاق النافذة
+        closeBtn.addEventListener('click', () => {
+            this.hideInstallPrompt(installPrompt);
+        });
+        
+        // رفض التثبيت
+        dismissBtn.addEventListener('click', () => {
+            localStorage.setItem('pwa_prompt_dismissed', Date.now().toString());
+            this.hideInstallPrompt(installPrompt);
+            
+            this.logEvent('PWA_PROMPT_DISMISSED', 'INFO', {
+                timestamp: Date.now()
+            });
+        });
+        
+        // تثبيت التطبيق
+        installBtn.addEventListener('click', () => {
+            this.install();
+            this.hideInstallPrompt(installPrompt);
+        });
+        
+        // إغلاق النافذة تلقائياً بعد 30 ثانية
+        setTimeout(() => {
+            if (installPrompt.parentNode) {
+                this.hideInstallPrompt(installPrompt);
+            }
+        }, 30000);
+        
+        this.logEvent('PWA_PROMPT_SHOWN', 'INFO', {
+            timestamp: Date.now()
+        });
+    }
+    
+    /**
+     * إخفاء موجه التثبيت
+     */
+    hideInstallPrompt(promptElement) {
+        if (!promptElement) {
+            promptElement = document.getElementById('pwaInstallPrompt');
+        }
+        
+        if (!promptElement || !promptElement.parentNode) return;
+        
+        promptElement.classList.add('hiding');
+        
+        setTimeout(() => {
+            if (promptElement.parentNode) {
+                promptElement.parentNode.removeChild(promptElement);
+            }
+        }, 300);
+    }
+    
+    /**
+     * عرض إشعار التحديث
+     */
+    showUpdateNotification(newVersion = null) {
+        // التحقق مما إذا كان المستخدم قد رفض الإشعار مؤخراً
+        const lastUpdateDismissed = localStorage.getItem('update_notification_dismissed');
+        if (lastUpdateDismissed) {
+            const dismissedTime = parseInt(lastUpdateDismissed, 10);
+            const hoursSinceDismissed = (Date.now() - dismissedTime) / (1000 * 60 * 60);
+            
+            // إذا مر أقل من 4 ساعات، لا نعرض الإشعار
+            if (hoursSinceDismissed < 4) {
+                return;
+            }
+        }
+        
+        const notification = document.createElement('div');
+        notification.id = 'updateNotification';
+        notification.className = 'update-notification';
+        notification.innerHTML = `
+            <div class="update-content">
+                <div class="update-icon">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                <div class="update-info">
+                    <h4>تحديث جديد متاح</h4>
+                    <p>${newVersion ? `الإصدار ${newVersion} جاهز للتثبيت` : 'تحسينات جديدة في الأمان والأداء'}</p>
+                    <p class="update-description">
+                        يتضمن إصلاحات وتحسينات مهمة لتجربة تشفير أكثر أماناً
+                    </p>
+                </div>
+                <div class="update-actions">
+                    <button class="update-button update-now" id="updateNow">
+                        <i class="fas fa-download"></i>
+                        تحديث الآن
+                    </button>
+                    <button class="update-button update-later" id="updateLater">
+                        لاحقاً
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // إضافة الأنماط إذا لم تكن موجودة
+        if (!document.querySelector('#update-notification-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'update-notification-styles';
+            styles.textContent = `
+                .update-notification {
+                    position: fixed;
+                    top: 30px;
+                    right: 30px;
+                    z-index: 9999;
+                    animation: slideInDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    font-family: 'Cairo', 'Orbitron', sans-serif;
+                }
+                
+                .update-content {
+                    background: linear-gradient(135deg, rgba(255, 152, 0, 0.95), rgba(255, 87, 34, 0.98));
+                    border: 2px solid #ff5722;
+                    border-radius: 15px;
+                    padding: 20px;
+                    width: 350px;
+                    max-width: 90vw;
+                    backdrop-filter: blur(10px);
+                    box-shadow: 0 10px 30px rgba(255, 87, 34, 0.3);
+                }
+                
+                .update-icon {
+                    width: 50px;
+                    height: 50px;
+                    background: rgba(255, 255, 255, 0.2);
+                    border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    gap: 10px;
-                    letter-spacing: 1px;
-                    flex: 2;
+                    font-size: 22px;
+                    color: white;
+                    margin: 0 auto 15px;
                 }
                 
-                .btn-pwa-install:hover {
-                    transform: scale(1.05);
-                    box-shadow: var(--glow);
+                .update-info {
+                    text-align: center;
+                    margin-bottom: 20px;
                 }
                 
-                .btn-pwa-dismiss {
-                    background: transparent;
-                    color: var(--gray);
-                    border: 2px solid var(--gray);
-                    border-radius: var(--radius-lg);
-                    padding: 10px 20px;
+                .update-info h4 {
+                    color: white;
                     font-family: 'Orbitron', sans-serif;
+                    font-size: 1.2rem;
+                    margin-bottom: 8px;
+                }
+                
+                .update-info p {
+                    color: rgba(255, 255, 255, 0.9);
+                    font-size: 0.9rem;
+                    margin-bottom: 5px;
+                }
+                
+                .update-description {
+                    font-size: 0.85rem !important;
+                    color: rgba(255, 255, 255, 0.8) !important;
+                }
+                
+                .update-actions {
+                    display: flex;
+                    gap: 10px;
+                }
+                
+                .update-button {
+                    flex: 1;
+                    padding: 12px 15px;
+                    border-radius: 10px;
+                    font-family: 'Orbitron', sans-serif;
+                    font-size: 0.9rem;
                     font-weight: 600;
                     cursor: pointer;
-                    transition: var(--transition-normal);
-                    flex: 1;
+                    transition: all 0.3s;
+                    border: none;
                 }
                 
-                .btn-pwa-dismiss:hover {
-                    color: var(--light);
-                    border-color: var(--light);
+                .update-now {
+                    background: white;
+                    color: #ff5722;
+                }
+                
+                .update-now:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+                }
+                
+                .update-later {
+                    background: transparent;
+                    color: white;
+                    border: 2px solid white;
+                }
+                
+                .update-later:hover {
+                    background: white;
+                    color: #ff5722;
+                }
+                
+                @keyframes slideInDown {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-50px) scale(0.9);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0) scale(1);
+                    }
+                }
+                
+                @keyframes slideOutUp {
+                    from {
+                        opacity: 1;
+                        transform: translateY(0) scale(1);
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateY(-50px) scale(0.9);
+                    }
+                }
+                
+                .update-notification.hiding {
+                    animation: slideOutUp 0.3s ease forwards;
+                }
+                
+                @media (max-width: 768px) {
+                    .update-notification {
+                        top: 20px;
+                        right: 20px;
+                        left: 20px;
+                        width: auto;
+                    }
+                    
+                    .update-content {
+                        width: 100%;
+                    }
+                }
+            `;
+            document.head.appendChild(styles);
+        }
+        
+        document.body.appendChild(notification);
+        
+        // معالجات الأحداث
+        const updateNowBtn = notification.querySelector('#updateNow');
+        const updateLaterBtn = notification.querySelector('#updateLater');
+        
+        updateNowBtn.addEventListener('click', () => {
+            window.location.reload();
+        });
+        
+        updateLaterBtn.addEventListener('click', () => {
+            localStorage.setItem('update_notification_dismissed', Date.now().toString());
+            this.hideUpdateNotification(notification);
+            
+            this.logEvent('UPDATE_NOTIFICATION_DISMISSED', 'INFO', {
+                timestamp: Date.now()
+            });
+        });
+        
+        // إغلاق تلقائي بعد 60 ثانية
+        setTimeout(() => {
+            if (notification.parentNode) {
+                this.hideUpdateNotification(notification);
+            }
+        }, 60000);
+        
+        this.logEvent('UPDATE_NOTIFICATION_SHOWN', 'INFO', {
+            newVersion,
+            timestamp: Date.now()
+        });
+    }
+    
+    /**
+     * إخفاء إشعار التحديث
+     */
+    hideUpdateNotification(notificationElement) {
+        if (!notificationElement) {
+            notificationElement = document.getElementById('updateNotification');
+        }
+        
+        if (!notificationElement || !notificationElement.parentNode) return;
+        
+        notificationElement.classList.add('hiding');
+        
+        setTimeout(() => {
+            if (notificationElement.parentNode) {
+                notificationElement.parentNode.removeChild(notificationElement);
+            }
+        }, 300);
+    }
+    
+    /**
+     * تثبيت التطبيق
+     */
+    async install() {
+        if (!this.deferredPrompt) {
+            this.showNotification('التطبيق مثبت بالفعل على جهازك', 'info');
+            return;
+        }
+        
+        try {
+            // عرض موجه التثبيت الأصلي للمتصفح
+            await this.deferredPrompt.prompt();
+            const choiceResult = await this.deferredPrompt.userChoice;
+            
+            this.logEvent('PWA_INSTALL_PROMPT_SHOWN', 'INFO', {
+                outcome: choiceResult.outcome,
+                timestamp: Date.now()
+            });
+            
+            this.deferredPrompt = null;
+            
+            if (choiceResult.outcome === 'accepted') {
+                this.showNotification('جاري تثبيت CipherVault...', 'success');
+            }
+            
+        } catch (error) {
+            console.error('PWA installation failed:', error);
+            this.showNotification('فشل تثبيت التطبيق', 'error');
+            
+            this.logEvent('PWA_INSTALL_FAILED', 'ERROR', {
+                error: error.message,
+                errorName: error.name,
+                timestamp: Date.now()
+            });
+        }
+    }
+    
+    /**
+     * عرض إشعار للمستخدم
+     */
+    showNotification(message, type = 'info', duration = 5000) {
+        // إنشاء عنصر الإشعار
+        const notification = document.createElement('div');
+        notification.className = `pwa-notification pwa-notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-${this.getNotificationIcon(type)}"></i>
+                <span class="notification-message">${message}</span>
+                <button class="notification-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+        
+        // إضافة الأنماط إذا لم تكن موجودة
+        if (!document.querySelector('#pwa-notification-styles')) {
+            const styles = document.createElement('style');
+            styles.id = 'pwa-notification-styles';
+            styles.textContent = `
+                .pwa-notification {
+                    position: fixed;
+                    bottom: 100px;
+                    right: 30px;
+                    z-index: 9998;
+                    animation: slideInRight 0.3s ease;
+                    font-family: 'Cairo', sans-serif;
+                    max-width: 400px;
+                }
+                
+                .notification-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    padding: 16px 20px;
+                    border-radius: 12px;
+                    backdrop-filter: blur(10px);
+                    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+                    border-left: 4px solid;
+                }
+                
+                .pwa-notification-info .notification-content {
+                    background: rgba(0, 168, 255, 0.9);
+                    border-left-color: #00a8ff;
+                    color: white;
+                }
+                
+                .pwa-notification-success .notification-content {
+                    background: rgba(0, 255, 136, 0.9);
+                    border-left-color: #00ff88;
+                    color: white;
+                }
+                
+                .pwa-notification-warning .notification-content {
+                    background: rgba(255, 170, 0, 0.9);
+                    border-left-color: #ffaa00;
+                    color: white;
+                }
+                
+                .pwa-notification-error .notification-content {
+                    background: rgba(255, 71, 87, 0.9);
+                    border-left-color: #ff4757;
+                    color: white;
+                }
+                
+                .notification-content i {
+                    font-size: 20px;
+                }
+                
+                .notification-message {
+                    flex: 1;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+                
+                .notification-close {
+                    background: transparent;
+                    border: none;
+                    color: inherit;
+                    cursor: pointer;
+                    opacity: 0.7;
+                    transition: opacity 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                }
+                
+                .notification-close:hover {
+                    opacity: 1;
+                    background: rgba(255, 255, 255, 0.1);
                 }
                 
                 @keyframes slideInRight {
@@ -557,318 +1534,53 @@ class EnhancedPWAManager {
                         transform: translateX(0);
                     }
                 }
-            `;
-            document.head.appendChild(styles);
-        }
-        
-        // إضافة أحداث الأزرار
-        installPrompt.querySelector('#installPWA').addEventListener('click', () => {
-            this.install();
-            installPrompt.remove();
-        });
-        
-        installPrompt.querySelector('#dismissPWA').addEventListener('click', () => {
-            installPrompt.remove();
-            localStorage.setItem('pwa_prompt_dismissed', Date.now().toString());
-        });
-        
-        setTimeout(() => {
-            if (installPrompt.parentNode) {
-                installPrompt.style.opacity = '0';
-                setTimeout(() => installPrompt.remove(), 300);
-            }
-        }, 30000);
-    }
-    
-    showUpdateNotification(newVersion = null) {
-        const notification = document.createElement('div');
-        notification.className = 'update-notification show';
-        notification.innerHTML = `
-            <div class="update-content">
-                <div class="update-icon">
-                    <i class="fas fa-sync-alt"></i>
-                </div>
-                <div class="update-info">
-                    <h4>تحديث متاح</h4>
-                    <p>${newVersion ? `الإصدار ${newVersion} متاح الآن` : 'تحديث جديد متاح'}</p>
-                    <p class="update-desc">يتضمن تحسينات في الأمان والأداء</p>
-                </div>
-                <div class="update-actions">
-                    <button class="btn-update-now" id="updateNow">
-                        <i class="fas fa-download"></i> تحديث الآن
-                    </button>
-                    <button class="btn-update-later" id="updateLater">
-                        لاحقاً
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(notification);
-        
-        if (!document.querySelector('#update-notification-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'update-notification-styles';
-            styles.textContent = `
-                .update-notification {
-                    position: fixed;
-                    top: 30px;
-                    right: 30px;
-                    background: linear-gradient(135deg, #ff9800, #ff5722);
-                    color: white;
-                    border-radius: var(--radius-xl);
-                    padding: 20px;
-                    z-index: 9999;
-                    box-shadow: 0 10px 30px rgba(255, 87, 34, 0.3);
-                    display: none;
-                    animation: slideInDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                    max-width: 400px;
-                    backdrop-filter: blur(10px);
-                    border: 2px solid #ff5722;
-                }
                 
-                .update-notification.show {
-                    display: block;
-                }
-                
-                .update-content {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 15px;
-                }
-                
-                .update-icon {
-                    width: 50px;
-                    height: 50px;
-                    background: rgba(255, 255, 255, 0.2);
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 24px;
-                    margin: 0 auto;
-                }
-                
-                .update-info {
-                    text-align: center;
-                }
-                
-                .update-info h4 {
-                    font-family: 'Orbitron', sans-serif;
-                    margin-bottom: 8px;
-                    font-size: 1.2rem;
-                }
-                
-                .update-info p {
-                    margin-bottom: 5px;
-                    opacity: 0.9;
-                    font-size: 0.9rem;
-                }
-                
-                .update-desc {
-                    font-size: 0.85rem !important;
-                    opacity: 0.8 !important;
-                }
-                
-                .update-actions {
-                    display: flex;
-                    gap: 10px;
-                }
-                
-                .btn-update-now {
-                    background: white;
-                    color: #ff5722;
-                    border: none;
-                    border-radius: var(--radius-lg);
-                    padding: 10px 20px;
-                    font-family: 'Orbitron', sans-serif;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: var(--transition-normal);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    flex: 2;
-                }
-                
-                .btn-update-now:hover {
-                    transform: scale(1.05);
-                    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
-                }
-                
-                .btn-update-later {
-                    background: transparent;
-                    color: white;
-                    border: 2px solid white;
-                    border-radius: var(--radius-lg);
-                    padding: 8px 20px;
-                    font-family: 'Orbitron', sans-serif;
-                    font-weight: 600;
-                    cursor: pointer;
-                    transition: var(--transition-normal);
-                    flex: 1;
-                }
-                
-                .btn-update-later:hover {
-                    background: white;
-                    color: #ff5722;
-                }
-                
-                @keyframes slideInDown {
+                @keyframes slideOutRight {
                     from {
-                        opacity: 0;
-                        transform: translateY(-50px);
+                        opacity: 1;
+                        transform: translateX(0);
                     }
                     to {
-                        opacity: 1;
-                        transform: translateY(0);
+                        opacity: 0;
+                        transform: translateX(50px);
+                    }
+                }
+                
+                .pwa-notification.hiding {
+                    animation: slideOutRight 0.3s ease forwards;
+                }
+                
+                @media (max-width: 768px) {
+                    .pwa-notification {
+                        bottom: 80px;
+                        right: 20px;
+                        left: 20px;
+                        max-width: none;
                     }
                 }
             `;
             document.head.appendChild(styles);
         }
         
-        notification.querySelector('#updateNow').addEventListener('click', () => {
-            window.location.reload();
-        });
-        
-        notification.querySelector('#updateLater').addEventListener('click', () => {
-            notification.remove();
-            localStorage.setItem('update_notification_dismissed', Date.now().toString());
-        });
-        
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.style.opacity = '0';
-                setTimeout(() => notification.remove(), 300);
-            }
-        }, 60000);
-    }
-    
-    async install() {
-        if (!this.deferredPrompt) {
-            this.showNotification('التطبيق مثبت بالفعل', 'info');
-            return;
-        }
-        
-        try {
-            await this.deferredPrompt.prompt();
-            const { outcome } = await this.deferredPrompt.userChoice;
-            
-            this.logEvent('PWA_INSTALL_PROMPT', 'INFO', {
-                outcome,
-                timestamp: Date.now()
-            });
-            
-            this.deferredPrompt = null;
-            
-        } catch (error) {
-            console.error('PWA installation failed:', error);
-            this.showNotification('فشل تثبيت التطبيق', 'error');
-            this.logEvent('PWA_INSTALL_FAILED', 'ERROR', {
-                error: error.message
-            });
-        }
-    }
-    
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `pwa-notification ${type}`;
-        notification.innerHTML = `
-            <div class="notification-content">
-                <i class="fas fa-${this.getNotificationIcon(type)}"></i>
-                <span>${message}</span>
-                <button class="notification-close">&times;</button>
-            </div>
-        `;
-        
         document.body.appendChild(notification);
         
-        if (!document.querySelector('#pwa-notification-styles')) {
-            const styles = document.createElement('style');
-            styles.id = 'pwa-notification-styles';
-            styles.textContent = `
-                .pwa-notification {
-                    position: fixed;
-                    bottom: 80px;
-                    right: 30px;
-                    padding: 15px 20px;
-                    border-radius: var(--radius-lg);
-                    z-index: 9998;
-                    animation: slideInRight 0.3s ease;
-                    max-width: 350px;
-                    backdrop-filter: blur(10px);
-                }
-                
-                .pwa-notification.info {
-                    background: rgba(0, 168, 255, 0.9);
-                    color: white;
-                    border-left: 4px solid #00a8ff;
-                }
-                
-                .pwa-notification.success {
-                    background: rgba(0, 255, 136, 0.9);
-                    color: white;
-                    border-left: 4px solid #00ff88;
-                }
-                
-                .pwa-notification.warning {
-                    background: rgba(255, 170, 0, 0.9);
-                    color: white;
-                    border-left: 4px solid #ffaa00;
-                }
-                
-                .pwa-notification.error {
-                    background: rgba(255, 71, 87, 0.9);
-                    color: white;
-                    border-left: 4px solid #ff4757;
-                }
-                
-                .notification-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                }
-                
-                .notification-content i {
-                    font-size: 20px;
-                }
-                
-                .notification-content span {
-                    flex: 1;
-                    font-size: 14px;
-                }
-                
-                .notification-close {
-                    background: none;
-                    border: none;
-                    color: white;
-                    font-size: 20px;
-                    cursor: pointer;
-                    opacity: 0.7;
-                    transition: opacity 0.2s;
-                }
-                
-                .notification-close:hover {
-                    opacity: 1;
-                }
-            `;
-            document.head.appendChild(styles);
-        }
-        
-        notification.querySelector('.notification-close').addEventListener('click', () => {
-            notification.remove();
+        // إغلاق الإشعار
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            this.hideNotification(notification);
         });
         
+        // إغلاق تلقائي بعد المدة المحددة
         setTimeout(() => {
             if (notification.parentNode) {
-                notification.style.opacity = '0';
-                setTimeout(() => notification.remove(), 300);
+                this.hideNotification(notification);
             }
-        }, 5000);
+        }, duration);
     }
     
+    /**
+     * الحصول على أيقونة الإشعار المناسبة
+     */
     getNotificationIcon(type) {
         const icons = {
             'info': 'info-circle',
@@ -880,7 +1592,27 @@ class EnhancedPWAManager {
         return icons[type] || 'info-circle';
     }
     
+    /**
+     * إخفاء الإشعار
+     */
+    hideNotification(notificationElement) {
+        if (!notificationElement || !notificationElement.parentNode) return;
+        
+        notificationElement.classList.add('hiding');
+        
+        setTimeout(() => {
+            if (notificationElement.parentNode) {
+                notificationElement.parentNode.removeChild(notificationElement);
+            }
+        }, 300);
+    }
+    
+    /**
+     * معالجة رسائل Service Worker
+     */
     handleServiceWorkerMessage(message) {
+        if (!message || !message.type) return;
+        
         switch (message.type) {
             case 'CACHE_UPDATED':
                 console.log('Cache updated:', message.data);
@@ -889,182 +1621,230 @@ class EnhancedPWAManager {
                 
             case 'SYNC_COMPLETED':
                 console.log('Background sync completed:', message.data);
-                break;
-                
-            case 'PUSH_NOTIFICATION':
-                this.showPushNotification(message.data);
+                if (message.data.success) {
+                    this.showNotification('تمت مزامنة البيانات بنجاح', 'success');
+                }
                 break;
                 
             case 'OFFLINE_MODE':
                 this.offlineMode = message.data.enabled;
                 this.updateConnectionStatus();
                 break;
-        }
-    }
-    
-    showPushNotification(data) {
-        if (!('Notification' in window) || Notification.permission !== 'granted') {
-            return;
-        }
-        
-        const options = {
-            body: data.body,
-            icon: '/assets/icons/icon-192x192.png',
-            badge: '/assets/icons/icon-72x72.png',
-            tag: data.tag || 'ciphervault-notification',
-            requireInteraction: data.important || false,
-            data: data.payload
-        };
-        
-        const notification = new Notification(data.title, options);
-        
-        notification.onclick = () => {
-            window.focus();
-            notification.close();
-            
-            if (data.action) {
-                this.handleNotificationAction(data.action, data.payload);
-            }
-        };
-    }
-    
-    handleNotificationAction(action, payload) {
-        switch (action) {
-            case 'OPEN_FILE':
-                console.log('Open file:', payload.fileId);
+                
+            case 'INSTALLATION_COMPLETE':
+                console.log('Service Worker installation complete:', message.data);
                 break;
                 
-            case 'SHOW_REPORT':
-                console.log('Show report:', payload.reportId);
-                break;
-                
-            case 'UPDATE_APP':
-                window.location.reload();
-                break;
+            default:
+                console.log('Unknown Service Worker message:', message);
         }
     }
     
-    async requestNotificationPermission() {
-        if (!('Notification' in window)) {
-            console.log('This browser does not support notifications');
-            return false;
-        }
+    /**
+     * معالجة حالة الاتصال بالإنترنت
+     */
+    handleOnlineStatus() {
+        this.showNotification('تم استعادة الاتصال بالإنترنت', 'success', 3000);
         
-        if (Notification.permission === 'granted') {
-            return true;
-        }
+        // طلب مزامنة الخلفية
+        this.requestBackgroundSync();
         
-        if (Notification.permission === 'denied') {
-            console.log('Notification permission denied');
-            return false;
-        }
+        // تحديث حالة الاتصال
+        this.updateConnectionStatus();
         
-        const permission = await Notification.requestPermission();
-        return permission === 'granted';
+        // تسجيل الحدث
+        this.logEvent('CONNECTION_ONLINE', 'INFO', {
+            timestamp: Date.now()
+        });
     }
     
+    /**
+     * معالجة حالة عدم الاتصال
+     */
+    handleOfflineStatus() {
+        this.showNotification('فقدان الاتصال بالإنترنت - العمل في وضع عدم الاتصال', 'warning', 5000);
+        this.updateConnectionStatus();
+        
+        // تسجيل الحدث
+        this.logEvent('CONNECTION_OFFLINE', 'WARNING', {
+            timestamp: Date.now()
+        });
+    }
+    
+    /**
+     * طلب مزامنة الخلفية
+     */
     async requestBackgroundSync() {
         if (!('serviceWorker' in navigator) || !('SyncManager' in window)) {
-            console.log('Background sync not supported');
             return false;
         }
         
         try {
             const registration = await navigator.serviceWorker.ready;
             await registration.sync.register(this.config.SYNC_TAG);
+            
+            this.logEvent('BACKGROUND_SYNC_REGISTERED', 'INFO', {
+                tag: this.config.SYNC_TAG,
+                timestamp: Date.now()
+            });
+            
             return true;
         } catch (error) {
             console.error('Background sync registration failed:', error);
+            
+            this.logEvent('BACKGROUND_SYNC_FAILED', 'ERROR', {
+                error: error.message,
+                timestamp: Date.now()
+            });
+            
             return false;
         }
     }
     
-    handleOnlineStatus() {
-        this.showNotification('تم استعادة الاتصال بالإنترنت', 'success');
-        
-        this.requestBackgroundSync();
-        
-        this.updateConnectionStatus();
-    }
-    
-    handleOfflineStatus() {
-        this.showNotification('فقدان الاتصال بالإنترنت - العمل في وضع عدم الاتصال', 'warning');
-        this.updateConnectionStatus();
-    }
-    
+    /**
+     * معالجة ظهور التطبيق
+     */
     handleAppVisible() {
+        // التحقق من التحديثات
         this.checkForUpdates();
         
+        // تحديث حالة الاتصال
+        this.updateConnectionStatus();
+        
+        // تسجيل الحدث
         this.logEvent('APP_VISIBLE', 'INFO', {
             timestamp: Date.now(),
             durationHidden: this.hiddenStart ? Date.now() - this.hiddenStart : 0
         });
+        
+        this.hiddenStart = null;
     }
     
+    /**
+     * معالجة إخفاء التطبيق
+     */
     handleAppHidden() {
         this.hiddenStart = Date.now();
         
+        // حفظ حالة التطبيق
         this.saveAppState();
+        
+        // تسجيل الحدث
+        this.logEvent('APP_HIDDEN', 'INFO', {
+            timestamp: Date.now()
+        });
     }
     
+    /**
+     * حفظ حالة التطبيق
+     */
     async saveAppState() {
-        const state = {
-            timestamp: Date.now(),
-            url: window.location.href,
-            scrollPosition: window.scrollY,
-            formData: this.collectFormData()
-        };
-        
         try {
+            const state = {
+                timestamp: Date.now(),
+                url: window.location.href,
+                scrollPosition: window.scrollY,
+                viewState: this.getCurrentViewState(),
+                sessionData: this.collectSessionData()
+            };
+            
             localStorage.setItem('ciphervault_app_state', JSON.stringify(state));
+            
+            this.logEvent('APP_STATE_SAVED', 'INFO', {
+                timestamp: state.timestamp
+            });
+            
         } catch (error) {
             console.warn('Failed to save app state:', error);
+            
+            this.logEvent('APP_STATE_SAVE_FAILED', 'WARNING', {
+                error: error.message
+            });
         }
     }
     
-    collectFormData() {
-        const forms = document.querySelectorAll('form');
+    /**
+     * جمع بيانات الجلسة
+     */
+    collectSessionData() {
+        const forms = document.querySelectorAll('form[data-save-state="true"]');
         const formData = {};
         
         forms.forEach((form, index) => {
-            const data = new FormData(form);
-            const entries = {};
-            
-            for (const [key, value] of data.entries()) {
-                entries[key] = value;
-            }
-            
-            if (Object.keys(entries).length > 0) {
-                formData[`form_${index}`] = {
-                    id: form.id,
-                    entries
-                };
+            try {
+                const data = new FormData(form);
+                const entries = {};
+                
+                for (const [key, value] of data.entries()) {
+                    // تجنب حفظ البيانات الحساسة
+                    if (key.toLowerCase().includes('password') || 
+                        key.toLowerCase().includes('secret') ||
+                        key.toLowerCase().includes('key')) {
+                        continue;
+                    }
+                    entries[key] = value;
+                }
+                
+                if (Object.keys(entries).length > 0) {
+                    formData[`form_${index}`] = {
+                        id: form.id || `form_${index}`,
+                        entries
+                    };
+                }
+            } catch (error) {
+                console.warn(`Failed to collect data from form ${index}:`, error);
             }
         });
         
         return formData;
     }
     
+    /**
+     * الحصول على حالة العرض الحالية
+     */
+    getCurrentViewState() {
+        const activeSection = document.querySelector('.section.active') || 
+                             document.querySelector('[data-section].active');
+        
+        return {
+            activeSection: activeSection ? activeSection.id || activeSection.dataset.section : null,
+            activeTab: document.querySelector('.tab.active') ? document.querySelector('.tab.active').id : null,
+            activeModal: document.querySelector('.modal.show') ? document.querySelector('.modal.show').id : null
+        };
+    }
+    
+    /**
+     * استعادة حالة التطبيق
+     */
     async restoreAppState() {
         try {
-            const saved = localStorage.getItem('ciphervault_app_state');
-            if (!saved) return;
+            const savedState = localStorage.getItem('ciphervault_app_state');
+            if (!savedState) return;
             
-            const state = JSON.parse(saved);
+            const state = JSON.parse(savedState);
             
-            if (state.scrollPosition) {
+            // التحقق من تاريخ الحالة (لا تستعيد إذا مر أكثر من ساعة)
+            const stateAge = Date.now() - state.timestamp;
+            if (stateAge > 60 * 60 * 1000) { // ساعة واحدة
+                localStorage.removeItem('ciphervault_app_state');
+                return;
+            }
+            
+            // استعادة موضع التمرير
+            if (state.scrollPosition && state.scrollPosition > 0) {
                 setTimeout(() => {
                     window.scrollTo(0, state.scrollPosition);
                 }, 100);
             }
             
-            if (state.formData) {
-                Object.values(state.formData).forEach(formInfo => {
+            // استعادة بيانات النماذج
+            if (state.sessionData && state.sessionData.formData) {
+                Object.values(state.sessionData.formData).forEach(formInfo => {
                     const form = document.getElementById(formInfo.id);
                     if (form) {
                         Object.entries(formInfo.entries).forEach(([key, value]) => {
                             const input = form.querySelector(`[name="${key}"]`);
-                            if (input) {
+                            if (input && !input.type || input.type !== 'password') {
                                 input.value = value;
                             }
                         });
@@ -1072,64 +1852,193 @@ class EnhancedPWAManager {
                 });
             }
             
+            // مسح الحالة المحفوظة
             localStorage.removeItem('ciphervault_app_state');
+            
+            this.logEvent('APP_STATE_RESTORED', 'INFO', {
+                timestamp: Date.now(),
+                stateAge
+            });
             
         } catch (error) {
             console.warn('Failed to restore app state:', error);
+            
+            this.logEvent('APP_STATE_RESTORE_FAILED', 'WARNING', {
+                error: error.message
+            });
+            
+            // مسح الحالة التالفة
+            localStorage.removeItem('ciphervault_app_state');
         }
     }
     
+    /**
+     * الحصول على وضع العرض
+     */
+    getDisplayMode() {
+        if (this.standalone) return 'standalone';
+        if (window.matchMedia('(display-mode: fullscreen)').matches) return 'fullscreen';
+        if (window.matchMedia('(display-mode: minimal-ui)').matches) return 'minimal-ui';
+        if (window.matchMedia('(display-mode: browser)').matches) return 'browser';
+        return 'unknown';
+    }
+    
+    /**
+     * تسجيل حدث في سجل التدقيق
+     */
     logEvent(type, severity, data) {
-        if (window.AuditLogger) {
-            window.AuditLogger.log(type, severity, data, 'pwa-manager');
+        if (window.AuditLogger && typeof window.AuditLogger.log === 'function') {
+            try {
+                window.AuditLogger.log(type, severity, data, 'pwa-manager');
+            } catch (error) {
+                console.warn('Failed to log audit event:', error);
+            }
+        }
+        
+        // تسجيل محلي للأحداث المهمة
+        if (severity === 'ERROR' || severity === 'WARNING') {
+            console[severity.toLowerCase()](`PWA Event: ${type}`, data);
         }
     }
     
+    /**
+     * الحصول على حالة PWA
+     */
     getStatus() {
         return {
             installed: this.installed,
             standalone: this.standalone,
             updateAvailable: this.updateAvailable,
             offlineMode: this.offlineMode,
-            serviceWorker: !!this.serviceWorker,
+            serviceWorkerRegistered: !!this.serviceWorker,
             notificationPermission: Notification.permission,
-            backgroundSync: 'SyncManager' in window
+            backgroundSyncSupported: 'SyncManager' in window,
+            displayMode: this.getDisplayMode(),
+            version: this.config.CACHE_VERSION
         };
     }
     
-    unregister() {
+    /**
+     * إلغاء تسجيل Service Worker
+     */
+    async unregister() {
         if (this.serviceWorker) {
-            this.serviceWorker.unregister();
-            this.serviceWorker = null;
-        }
-        
-        if ('caches' in window) {
-            caches.keys().then(cacheNames => {
-                cacheNames.forEach(cacheName => {
-                    if (cacheName.startsWith('ciphervault')) {
-                        caches.delete(cacheName);
-                    }
+            try {
+                await this.serviceWorker.unregister();
+                this.serviceWorker = null;
+                
+                this.logEvent('SERVICE_WORKER_UNREGISTERED', 'INFO', {
+                    timestamp: Date.now()
                 });
-            });
+            } catch (error) {
+                console.error('Failed to unregister Service Worker:', error);
+                
+                this.logEvent('SERVICE_WORKER_UNREGISTER_FAILED', 'ERROR', {
+                    error: error.message
+                });
+            }
         }
         
-        this.logEvent('PWA_UNREGISTERED', 'INFO', {
-            timestamp: Date.now()
-        });
+        // مسح ذاكرة التخزين المؤقت
+        if ('caches' in window) {
+            try {
+                const cacheNames = await caches.keys();
+                await Promise.all(
+                    cacheNames.map(cacheName => {
+                        if (cacheName.startsWith('ciphervault')) {
+                            return caches.delete(cacheName);
+                        }
+                    })
+                );
+                
+                this.logEvent('CACHE_CLEARED', 'INFO', {
+                    timestamp: Date.now(),
+                    cacheCount: cacheNames.length
+                });
+            } catch (error) {
+                console.error('Failed to clear cache:', error);
+            }
+        }
     }
 }
 
-// إنشاء نسخة عامة
-const PWAManager = new EnhancedPWAManager();
-
-// التصدير للاستخدام العام
-if (typeof window !== 'undefined') {
-    window.PWAManager = PWAManager;
+// التحقق من دعم المتصفح قبل التهيئة
+function isPwaSupported() {
+    return 'serviceWorker' in navigator && 
+           'caches' in window && 
+           'Promise' in window;
 }
 
+// تهيئة PWA Manager مع معالجة الأخطاء
+let PWAManager = null;
+
+if (typeof window !== 'undefined' && isPwaSupported()) {
+    try {
+        PWAManager = new EnhancedPWAManager();
+        
+        // جعل المدير متاحاً عالمياً
+        window.PWAManager = PWAManager;
+        
+        // التصدير للاستخدام في الوحدات
+        if (typeof module !== 'undefined' && module.exports) {
+            module.exports = {
+                EnhancedPWAManager,
+                PWAManager,
+                isPwaSupported
+            };
+        }
+        
+        // إضافة حدث لمعرفة عندما يكون المدير جاهزاً
+        window.dispatchEvent(new CustomEvent('pwa:ready', {
+            detail: { manager: PWAManager }
+        }));
+        
+    } catch (error) {
+        console.error('Failed to initialize PWA Manager:', error);
+        
+        // إنشاء مدير بديل مع وظائف محدودة
+        PWAManager = {
+            getStatus: () => ({ error: 'PWA Manager initialization failed' }),
+            showNotification: (message, type) => {
+                console.log(`[PWA Notification - ${type}]: ${message}`);
+            },
+            logEvent: (type, severity, data) => {
+                console.log(`[PWA Event - ${severity}]: ${type}`, data);
+            }
+        };
+        
+        window.PWAManager = PWAManager;
+    }
+} else {
+    console.warn('PWA features not supported in this browser');
+    
+    // إنشاء مدير وهمي للتوافق
+    PWAManager = {
+        getStatus: () => ({ 
+            supported: false,
+            message: 'PWA features not supported in this browser' 
+        }),
+        showNotification: (message, type) => {
+            console.log(`[PWA Notification - ${type}]: ${message}`);
+        },
+        logEvent: (type, severity, data) => {
+            console.log(`[PWA Event - ${severity}]: ${type}`, data);
+        },
+        showInstallPromptIfNeeded: () => false
+    };
+    
+    if (typeof window !== 'undefined') {
+        window.PWAManager = PWAManager;
+    }
+}
+
+// التصدير للاستخدام في الوحدات النمطية
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         EnhancedPWAManager,
-        PWAManager
+        PWAManager: PWAManager || {
+            getStatus: () => ({ error: 'PWA not initialized' })
+        },
+        isPwaSupported
     };
 }
