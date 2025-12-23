@@ -1,1 +1,243 @@
+/* CipherVault 3D Pro - Dark Mode Styles */
+/* Version: 4.3.0 */
 
+/* Dark Mode Color Variables */
+:root {
+  --dark-bg-primary: #050510;
+  --dark-bg-secondary: #0a0a1a;
+  --dark-bg-tertiary: #0f0f2a;
+  --dark-bg-card: rgba(10, 15, 35, 0.92);
+  --dark-bg-input: rgba(0, 0, 0, 0.5);
+  --dark-bg-modal: rgba(5, 5, 15, 0.95);
+
+  --dark-text-primary: #ffffff;
+  --dark-text-secondary: #b0b0c9;
+  --dark-text-tertiary: #8a8aa3;
+  --dark-text-disabled: #5a5a7a;
+
+  --dark-border-primary: rgba(0, 212, 255, 0.3);
+  --dark-border-secondary: rgba(255, 255, 255, 0.1);
+  --dark-border-card: rgba(0, 212, 255, 0.3);
+
+  --dark-shadow-card: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --dark-shadow-heavy: 0 30px 80px rgba(0, 0, 0, 0.8);
+  --dark-glow-primary: 0 0 30px rgba(0, 212, 255, 0.6);
+  --dark-glow-accent: 0 0 40px rgba(0, 255, 136, 0.5);
+  --dark-glow-error: 0 0 30px rgba(255, 71, 87, 0.6);
+
+  --dark-accent-primary: #00d4ff;
+  --dark-accent-primary-dark: #0099cc;
+  --dark-accent-primary-light: #66e5ff;
+  --dark-accent-secondary: #ff0080;
+  --dark-accent-secondary-dark: #cc0066;
+  --dark-accent-secondary-light: #ff66b3;
+  --dark-accent-success: #00ff88;
+  --dark-accent-success-dark: #00cc6a;
+  --dark-accent-warning: #ffaa00;
+  --dark-accent-warning-dark: #cc8800;
+  --dark-accent-error: #ff4757;
+  --dark-accent-error-dark: #cc3745;
+  --dark-accent-info: #00a8ff;
+  --dark-accent-info-dark: #0086cc;
+}
+
+/* Apply Dark Mode Styles */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: var(--dark-bg-primary);
+    color: var(--dark-text-primary);
+  }
+
+  /* General Elements */
+  .card-3d,
+  .card-front,
+  .card-back,
+  .stats-panel-3d .stat-card,
+  .security-badges-3d .badge,
+  .advanced-settings-panel,
+  .settings-container,
+  .pwa-install-prompt,
+  .status-message,
+  .file-info-3d,
+  .password-input-3d input,
+  .option,
+  .encryption-options,
+  .decryption-options,
+  .detail,
+  .stat,
+  .notification-3d,
+  .pwa-notification,
+  .pwa-install-prompt .pwa-prompt-content,
+  .pwa-notification .notification-content {
+    background-color: var(--dark-bg-card);
+    border-color: var(--dark-border-card);
+    color: var(--dark-text-primary);
+  }
+
+  .file-upload-3d,
+  .password-input-3d input,
+  .option,
+  .detail,
+  .stat,
+  .status-message,
+  .notification-3d,
+  .pwa-notification {
+    border-color: var(--dark-border-secondary);
+  }
+
+  .password-input-3d input,
+  .file-upload-3d:hover,
+  .option:hover,
+  .detail:hover,
+  .stat:hover,
+  .btn-3d:hover,
+  .lang-option:hover,
+  .control-btn:hover {
+    box-shadow: var(--dark-glow-primary);
+  }
+
+  .btn-encrypt {
+    background: linear-gradient(135deg, var(--dark-accent-primary), var(--dark-accent-primary-dark));
+  }
+
+  .btn-decrypt {
+    background: linear-gradient(135deg, var(--dark-accent-secondary), var(--dark-accent-secondary-dark));
+  }
+
+  .btn-encrypt:hover {
+    box-shadow: 0 20px 40px rgba(0, 212, 255, 0.5);
+  }
+
+  .btn-decrypt:hover {
+    box-shadow: 0 20px 40px rgba(255, 0, 128, 0.5);
+  }
+
+  .security-indicator.active {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: var(--dark-accent-success);
+    color: var(--dark-accent-success);
+    box-shadow: var(--dark-glow-accent);
+  }
+
+  .security-indicator.medium {
+    background: rgba(255, 170, 0, 0.1);
+    border-color: var(--dark-accent-warning);
+    color: var(--dark-accent-warning);
+  }
+
+  .security-indicator {
+    background: rgba(255, 71, 87, 0.1);
+    border-color: var(--dark-accent-error);
+    color: var(--dark-accent-error);
+  }
+
+  .status-message.success {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: var(--dark-accent-success);
+    color: var(--dark-accent-success);
+  }
+
+  .status-message.error {
+    background: rgba(255, 71, 87, 0.15);
+    border-color: var(--dark-accent-error);
+    color: var(--dark-accent-error);
+  }
+
+  .status-message.warning {
+    background: rgba(255, 170, 0, 0.15);
+    border-color: var(--dark-accent-warning);
+    color: var(--dark-accent-warning);
+  }
+
+  .status-message.info {
+    background: rgba(0, 168, 255, 0.15);
+    border-color: var(--dark-accent-info);
+    color: var(--dark-accent-info);
+  }
+
+  .notification-success {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: var(--dark-accent-success);
+    color: var(--dark-accent-success);
+  }
+
+  .notification-error {
+    background: rgba(255, 71, 87, 0.15);
+    border-color: var(--dark-accent-error);
+    color: var(--dark-accent-error);
+  }
+
+  .notification-warning {
+    background: rgba(255, 170, 0, 0.15);
+    border-color: var(--dark-accent-warning);
+    color: var(--dark-accent-warning);
+  }
+
+  .notification-info {
+    background: rgba(0, 168, 255, 0.15);
+    border-color: var(--dark-accent-info);
+    color: var(--dark-accent-info);
+  }
+
+  .hint.valid {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: var(--dark-accent-success);
+    color: var(--dark-accent-success);
+  }
+
+  .password-match {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: var(--dark-accent-success);
+    color: var(--dark-accent-success);
+  }
+
+  .lang-option.active,
+  .control-btn.active {
+    background: rgba(0, 212, 255, 0.2);
+    border-color: var(--dark-accent-primary);
+    color: var(--dark-text-primary);
+  }
+
+  .security-level-option.selected {
+    border-color: var(--dark-accent-primary);
+    background: rgba(0, 212, 255, 0.1);
+    box-shadow: var(--dark-glow-primary);
+  }
+
+  .pwa-install-prompt .pwa-prompt-content {
+    background: linear-gradient(135deg, var(--dark-bg-card), var(--dark-bg-secondary));
+    border-color: var(--dark-accent-primary);
+  }
+
+  .pwa-notification .notification-content {
+    background: var(--dark-bg-card);
+    border-left-color: var(--dark-accent-primary);
+  }
+
+  /* Text Colors */
+  .text-primary { color: var(--dark-accent-primary); }
+  .text-secondary { color: var(--dark-accent-secondary); }
+  .text-success { color: var(--dark-accent-success); }
+  .text-warning { color: var(--dark-accent-warning); }
+  .text-error { color: var(--dark-accent-error); }
+  .text-info { color: var(--dark-accent-info); }
+  .text-gray { color: var(--dark-text-secondary); }
+  .text-light { color: var(--dark-text-primary); }
+
+  /* Input Placeholders */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--dark-text-tertiary);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar-track {
+    background: var(--dark-bg-secondary);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--dark-accent-primary);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--dark-accent-primary-dark);
+  }
+}
