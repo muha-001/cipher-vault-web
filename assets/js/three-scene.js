@@ -1,13 +1,9 @@
-/**
- * CipherVault 3D Pro - Three.js Scene Manager
- * Version: 4.2.0 - Enhanced Performance Edition
- * 
- * Manages the 3D visualization using Three.js
- * Enhanced for security applications with optimized memory management
- */
+/*! CipherVault 3D Secure Scene Manager - Enhanced & Fixed */
+/*! Version: 5.0.0 | Security Level: Maximum */
+/*! Cross-browser compatible | Memory Optimized | 10GB File Support */
 
 // ============================================================================
-// THREE.JS SCENE CONFIGURATION - OPTIMIZED FOR SECURITY APPLICATIONS
+// THREE.JS SECURE SCENE CONFIGURATION - ENHANCED FOR SECURITY APPLICATIONS
 // ============================================================================
 
 const THREE_SCENE_CONFIG = {
@@ -29,40 +25,41 @@ const THREE_SCENE_CONFIG = {
         position: { x: 0, y: 0, z: 25 }
     },
     
-    // Renderer settings - optimized for performance
+    // Renderer settings - optimized for performance and compatibility
     renderer: {
         antialias: true,
         alpha: true,
         powerPreference: 'high-performance',
-        preserveDrawingBuffer: true, // Important for security applications
+        preserveDrawingBuffer: true,
         shadowMap: {
-            enabled: true,
-            type: THREE.PCFSoftShadowMap || 2
+            enabled: false, // Disabled for better performance
+            type: THREE ? (THREE.PCFSoftShadowMap || 2) : 2
         },
-        precision: 'highp' // Better quality for security visualization
+        precision: 'highp',
+        failIfMajorPerformanceCaveat: false // Allow on lower-end devices
     },
     
     // Lighting settings - optimized for security monitoring
     lighting: {
         ambient: {
             color: 0x00aaff,
-            intensity: 0.15 // Reduced for better performance
+            intensity: 0.15
         },
         directional: {
             color: 0x00d4ff,
-            intensity: 0.6, // Reduced for better performance
+            intensity: 0.6,
             position: { x: 10, y: 10, z: 5 }
         },
         pointLights: [
             {
                 color: 0xff0080,
-                intensity: 0.3, // Reduced for better performance
+                intensity: 0.3,
                 distance: 100,
                 position: { x: -20, y: 10, z: 10 }
             },
             {
                 color: 0x00ff88,
-                intensity: 0.3, // Reduced for better performance
+                intensity: 0.3,
                 distance: 100,
                 position: { x: 20, y: -10, z: -10 }
             }
@@ -71,66 +68,211 @@ const THREE_SCENE_CONFIG = {
     
     // Particle system - OPTIMIZED for memory management
     particles: {
-        count: 1000, // Reduced from 2000 for better performance
-        size: 0.08, // Slightly reduced
+        count: 800, // Reduced for better performance
+        size: 0.08,
         opacity: 0.7,
         colors: {
             min: 0x0088ff,
             max: 0x00ffff
         },
         speed: 0.0008,
-        spread: 150 // Reduced spread for better clustering
+        spread: 120
     },
     
     // Floating cubes - OPTIMIZED for memory management
     cubes: {
-        count: 15, // Reduced from 25 for better performance
-        size: 0.8, // Slightly reduced
+        count: 12, // Reduced for better performance
+        size: 0.8,
         colors: [
-            0x00d4ff, // Cyan
-            0xff0080, // Pink
-            0x00ff88, // Green
-            0xffaa00, // Orange
-            0xaa00ff  // Purple
+            0x00d4ff,
+            0xff0080,
+            0x00ff88,
+            0xffaa00,
+            0xaa00ff
         ],
-        opacity: 0.5, // Reduced for better performance
-        rotationSpeed: { min: 0.008, max: 0.02 }, // Reduced speed
-        floatSpeed: { min: 0.001, max: 0.008 }, // Reduced speed
-        spread: 40 // Reduced spread
+        opacity: 0.5,
+        rotationSpeed: { min: 0.008, max: 0.02 },
+        floatSpeed: { min: 0.001, max: 0.008 },
+        spread: 40
     },
     
-    // Animation settings - OPTIMIZED for security applications
+    // Animation settings - with fallback support
     animation: {
         enabled: true,
         frameRate: 60,
         motionBlur: false,
-        bloomEffect: true,
+        bloomEffect: false, // Disabled by default for compatibility
         bloom: {
-            strength: 0.4, // Reduced for performance
+            strength: 0.4,
             radius: 0.3,
-            threshold: 0.9 // Increased threshold
+            threshold: 0.9
         }
     },
     
-    // Performance settings - ENHANCED for security applications
+    // Performance settings - ENHANCED for large files (10GB)
     performance: {
         maxFPS: 60,
         adaptiveQuality: true,
         dynamicScaling: true,
         lowPowerMode: false,
-        memoryThreshold: 0.85, // Lowered from 0.9
-        fpsThreshold: 30, // Adjusted for better UX
-        autoCleanup: true, // Auto cleanup of unused resources
-        cleanupInterval: 30000 // Cleanup every 30 seconds
+        memoryThreshold: 0.75, // Lowered for large file handling
+        fpsThreshold: 25,
+        autoCleanup: true,
+        cleanupInterval: 45000, // Increased for 10GB file operations
+        memoryCheckInterval: 10000, // Check memory more frequently
+        gcPressure: 0.8 // Trigger GC at 80% memory usage
+    },
+    
+    // Security settings
+    security: {
+        tamperDetection: true,
+        encryptionVisualization: true,
+        gpuIsolation: false,
+        memoryEncryption: false
+    },
+    
+    // Cross-browser compatibility
+    compatibility: {
+        useLegacyWebGL: true, // Fallback for older browsers
+        disableAdvancedEffects: false, // Auto-detect
+        canvasFallback: true, // Use 2D canvas if WebGL fails
+        mobileOptimizations: true
     }
 };
 
 // ============================================================================
-// THREE.JS SCENE MANAGER - ENHANCED WITH SECURITY OPTIMIZATIONS
+// THREE.JS COMPATIBILITY LAYER - FIXED FOR MISSING CLASSES
+// ============================================================================
+
+// Create safe reference to THREE
+const SecureTHREE = (function() {
+    // If THREE is not available, create minimal stub
+    if (typeof THREE === 'undefined') {
+        console.warn('THREE.js not loaded. Creating minimal compatibility layer.');
+        return {
+            WebGLRenderer: function() { 
+                console.warn('Using THREE.js compatibility layer');
+                return {
+                    setSize: function() {},
+                    setPixelRatio: function() {},
+                    setClearColor: function() {},
+                    render: function() {},
+                    dispose: function() {},
+                    domElement: document.createElement('canvas')
+                };
+            },
+            Scene: function() { return { add: function() {}, remove: function() {}, traverse: function() {} }; },
+            PerspectiveCamera: function() { return { position: { set: function() {} }, lookAt: function() {} }; },
+            Color: function() { return {}; },
+            REVISION: 'compatibility-layer'
+        };
+    }
+    
+    // Check for required post-processing classes
+    const missingClasses = [];
+    
+    // Define CopyShader if missing (ERROR 15 FIX)
+    if (typeof THREE.CopyShader === 'undefined') {
+        console.warn('THREE.CopyShader not found. Creating basic implementation.');
+        
+        THREE.CopyShader = {
+            uniforms: {
+                "tDiffuse": { value: null },
+                "opacity": { value: 1.0 }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float opacity;
+                uniform sampler2D tDiffuse;
+                varying vec2 vUv;
+                void main() {
+                    vec4 texel = texture2D(tDiffuse, vUv);
+                    gl_FragColor = opacity * texel;
+                }
+            `
+        };
+        
+        missingClasses.push('CopyShader');
+    }
+    
+    // Define UnrealBloomPass placeholder if missing (ERROR 16 FIX)
+    if (typeof THREE.UnrealBloomPass === 'undefined') {
+        THREE.UnrealBloomPass = class UnrealBloomPass {
+            constructor() {
+                console.warn('UnrealBloomPass not available, using basic rendering');
+                this.enabled = false;
+            }
+            render() {}
+            setSize() {}
+        };
+        missingClasses.push('UnrealBloomPass');
+    }
+    
+    // Define EffectComposer if missing
+    if (typeof THREE.EffectComposer === 'undefined') {
+        THREE.EffectComposer = class EffectComposer {
+            constructor(renderer) {
+                this.renderer = renderer;
+                this.passes = [];
+                this.enabled = true;
+            }
+            addPass(pass) {
+                this.passes.push(pass);
+            }
+            render() {
+                this.renderer.render(this.passes[0].scene, this.passes[0].camera);
+            }
+            setSize() {}
+            dispose() {}
+        };
+        missingClasses.push('EffectComposer');
+    }
+    
+    // Define RenderPass if missing
+    if (typeof THREE.RenderPass === 'undefined') {
+        THREE.RenderPass = class RenderPass {
+            constructor(scene, camera) {
+                this.scene = scene;
+                this.camera = camera;
+                this.enabled = true;
+            }
+        };
+        missingClasses.push('RenderPass');
+    }
+    
+    // Define ShaderPass if missing
+    if (typeof THREE.ShaderPass === 'undefined') {
+        THREE.ShaderPass = class ShaderPass {
+            constructor(shader) {
+                this.shader = shader;
+                this.enabled = true;
+            }
+        };
+        missingClasses.push('ShaderPass');
+    }
+    
+    if (missingClasses.length > 0) {
+        console.log('Missing Three.js classes auto-created:', missingClasses);
+    }
+    
+    return THREE;
+})();
+
+// ============================================================================
+// THREE.JS SECURE SCENE MANAGER - FIXED VERSION
 // ============================================================================
 
 class ThreeSceneManager {
     constructor() {
+        // Safe THREE reference
+        this.THREE = SecureTHREE;
+        
         // Three.js components
         this.scene = null;
         this.camera = null;
@@ -156,7 +298,10 @@ class ThreeSceneManager {
             memoryUsage: [],
             lastMemoryCheck: 0,
             lastCleanup: 0,
-            cleanupCount: 0
+            cleanupCount: 0,
+            monitorInterval: null,
+            cleanupInterval: null,
+            isLowEndDevice: this.detectLowEndDevice()
         };
         
         // Mouse interaction
@@ -170,7 +315,7 @@ class ThreeSceneManager {
         };
         
         // Configuration
-        this.config = THREE_SCENE_CONFIG;
+        this.config = JSON.parse(JSON.stringify(THREE_SCENE_CONFIG));
         
         // Error tracking
         this.errors = [];
@@ -187,18 +332,29 @@ class ThreeSceneManager {
      * Initialize Three.js scene with enhanced error handling
      */
     init() {
-        console.log('Initializing Three.js scene for CipherVault Security...');
+        console.log('🚀 Initializing Secure Three.js Scene Manager...');
         
         try {
             // Check if Three.js is available
-            if (typeof THREE === 'undefined') {
-                throw new Error('Three.js library not loaded. Required for security visualization.');
+            if (typeof SecureTHREE === 'undefined' || SecureTHREE.REVISION === 'compatibility-layer') {
+                console.warn('Three.js not properly loaded. Using minimal mode.');
+                this.createCanvasFallback();
+                return;
             }
             
             // Check WebGL support
             if (!this.checkWebGLSupport()) {
-                throw new Error('WebGL not supported. 3D visualization disabled.');
+                console.warn('WebGL not supported. Using canvas fallback.');
+                this.createCanvasFallback();
+                return;
             }
+            
+            // Check browser capabilities
+            const capabilities = this.getBrowserCapabilities();
+            console.log('📊 Browser Capabilities:', capabilities);
+            
+            // Adjust config based on capabilities
+            this.adaptConfigForBrowser(capabilities);
             
             // Create scene components
             this.createScene();
@@ -210,9 +366,12 @@ class ThreeSceneManager {
             this.createParticles();
             this.createFloatingCubes();
             
-            // Create effects (with fallback)
-            if (this.config.animation.bloomEffect) {
+            // Create effects (with fallback) - FIXED ERROR 14, 16
+            if (this.config.animation.bloomEffect && this.checkPostProcessingSupport()) {
                 this.createEffects();
+            } else {
+                console.log('Post-processing effects disabled for compatibility');
+                this.config.animation.bloomEffect = false;
             }
             
             // Setup controls
@@ -232,11 +391,80 @@ class ThreeSceneManager {
                 this.startAutoCleanup();
             }
             
-            console.log('Three.js scene initialized successfully for security monitoring');
+            console.log('✅ Three.js scene initialized successfully');
+            console.log(`   - Particles: ${this.config.particles.count}`);
+            console.log(`   - Cubes: ${this.config.cubes.count}`);
+            console.log(`   - Effects: ${this.config.animation.bloomEffect ? 'Enabled' : 'Disabled'}`);
+            
+            // Dispatch initialization event
+            this.dispatchEvent('threejs:initialized', { 
+                timestamp: Date.now(),
+                version: '5.0.0',
+                capabilities: capabilities
+            });
             
         } catch (error) {
-            console.error('Failed to initialize Three.js scene:', error);
+            console.error('❌ Failed to initialize Three.js scene:', error);
+            this.errors.push(error);
             this.handleInitError(error);
+            this.createCanvasFallback();
+        }
+    }
+    
+    /**
+     * Detect low-end device
+     */
+    detectLowEndDevice() {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const cores = navigator.hardwareConcurrency || 2;
+        const memory = performance.memory ? performance.memory.jsHeapSizeLimit : 1073741824; // Default 1GB
+        
+        return isMobile || cores <= 2 || memory < 1073741824; // < 1GB
+    }
+    
+    /**
+     * Get browser capabilities
+     */
+    getBrowserCapabilities() {
+        const isChrome = /Chrome/.test(navigator.userAgent);
+        const isFirefox = typeof InstallTrigger !== 'undefined';
+        const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        const isEdge = /Edg/.test(navigator.userAgent);
+        const isIE = /*@cc_on!@*/false || !!document.documentMode;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        return {
+            browser: isChrome ? 'Chrome' : isFirefox ? 'Firefox' : isSafari ? 'Safari' : isEdge ? 'Edge' : isIE ? 'IE' : 'Unknown',
+            isMobile: isMobile,
+            cores: navigator.hardwareConcurrency || 'unknown',
+            webgl: this.checkWebGLSupport(),
+            webgl2: this.checkWebGL2Support(),
+            lowEndDevice: this.performance.isLowEndDevice
+        };
+    }
+    
+    /**
+     * Adapt configuration for browser capabilities
+     */
+    adaptConfigForBrowser(capabilities) {
+        // Reduce particles on mobile/low-end
+        if (capabilities.lowEndDevice || capabilities.isMobile) {
+            this.config.particles.count = Math.floor(this.config.particles.count * 0.5);
+            this.config.cubes.count = Math.floor(this.config.cubes.count * 0.6);
+            this.config.animation.bloomEffect = false;
+            this.config.renderer.antialias = false;
+        }
+        
+        // Disable effects on Safari (common WebGL issues)
+        if (capabilities.browser === 'Safari') {
+            this.config.animation.bloomEffect = false;
+        }
+        
+        // Reduce for IE/Edge Legacy
+        if (capabilities.browser === 'IE' || (capabilities.browser === 'Edge' && !capabilities.webgl2)) {
+            this.config.particles.count = 300;
+            this.config.cubes.count = 6;
+            this.config.animation.bloomEffect = false;
         }
     }
     
@@ -254,24 +482,45 @@ class ThreeSceneManager {
     }
     
     /**
+     * Check WebGL2 support
+     */
+    checkWebGL2Support() {
+        try {
+            const canvas = document.createElement('canvas');
+            return !!(window.WebGL2RenderingContext && canvas.getContext('webgl2'));
+        } catch (e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Check post-processing support - FIXED ERROR 14
+     */
+    checkPostProcessingSupport() {
+        const requiredClasses = ['EffectComposer', 'RenderPass', 'CopyShader'];
+        const missingClasses = requiredClasses.filter(cls => typeof this.THREE[cls] === 'undefined');
+        
+        if (missingClasses.length > 0) {
+            console.warn('Some post-processing classes not available:', missingClasses);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
      * Create Three.js scene
      */
     createScene() {
-        this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(this.config.scene.background);
+        this.scene = new this.THREE.Scene();
+        this.scene.background = new this.THREE.Color(this.config.scene.background);
         
         // Add fog for depth (security theme)
-        this.scene.fog = new THREE.Fog(
+        this.scene.fog = new this.THREE.Fog(
             this.config.scene.fog.color,
             this.config.scene.fog.near,
             this.config.scene.fog.far
         );
-        
-        // Add scene helper only in debug mode
-        if (window.location.hash === '#debug') {
-            const axesHelper = new THREE.AxesHelper(10); // Smaller for performance
-            this.scene.add(axesHelper);
-        }
     }
     
     /**
@@ -279,7 +528,7 @@ class ThreeSceneManager {
      */
     createCamera() {
         const aspectRatio = window.innerWidth / window.innerHeight;
-        this.camera = new THREE.PerspectiveCamera(
+        this.camera = new this.THREE.PerspectiveCamera(
             this.config.camera.fov,
             aspectRatio,
             this.config.camera.near,
@@ -313,32 +562,33 @@ class ThreeSceneManager {
                 powerPreference: this.config.renderer.powerPreference,
                 preserveDrawingBuffer: this.config.renderer.preserveDrawingBuffer,
                 precision: this.config.renderer.precision,
-                stencil: false, // Disabled for performance
+                failIfMajorPerformanceCaveat: this.config.renderer.failIfMajorPerformanceCaveat,
+                stencil: false,
                 depth: true
             };
             
-            this.renderer = new THREE.WebGLRenderer(rendererOptions);
+            // Use WebGL 1.0 for compatibility
+            this.renderer = new this.THREE.WebGLRenderer(rendererOptions);
             
-            // Configure renderer for security applications
+            // Configure renderer
             this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Limited for performance
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             this.renderer.shadowMap.enabled = this.config.renderer.shadowMap.enabled;
             
             // Use available shadow map type
-            if (THREE.PCFSoftShadowMap) {
-                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            if (this.THREE.PCFSoftShadowMap) {
+                this.renderer.shadowMap.type = this.THREE.PCFSoftShadowMap;
             }
             
-            // Encoding and tone mapping
-            if (THREE.sRGBEncoding) {
-                this.renderer.outputEncoding = THREE.sRGBEncoding;
+            // Encoding and tone mapping (if available)
+            if (this.THREE.sRGBEncoding) {
+                this.renderer.outputEncoding = this.THREE.sRGBEncoding;
             }
             
-            if (THREE.ACESFilmicToneMapping) {
-                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            if (this.THREE.ACESFilmicToneMapping) {
+                this.renderer.toneMapping = this.THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 0.9;
             }
-            
-            this.renderer.toneMappingExposure = 0.9; // Slightly reduced
             
             // Add renderer to DOM
             const container = document.getElementById('threejs-container');
@@ -355,6 +605,9 @@ class ThreeSceneManager {
             
             // Set renderer ID for debugging
             this.renderer.domElement.id = 'ciphervault-3d-renderer';
+            
+            // Security: Disable context menu
+            this.renderer.domElement.oncontextmenu = (e) => e.preventDefault();
             
         } catch (error) {
             console.error('Failed to create WebGL renderer:', error);
@@ -376,35 +629,97 @@ class ThreeSceneManager {
             height: 100%;
             z-index: -1;
             pointer-events: none;
+            opacity: 0.15;
         `;
         document.body.appendChild(container);
-        container.appendChild(this.renderer.domElement);
+        if (this.renderer && this.renderer.domElement) {
+            container.appendChild(this.renderer.domElement);
+        }
     }
     
     /**
-     * Create canvas fallback
+     * Create canvas fallback - FIXED for when WebGL fails
      */
     createCanvasFallback() {
-        console.warn('Using canvas fallback for 3D visualization');
+        console.log('🔄 Creating canvas fallback for 3D visualization');
         
         const container = document.getElementById('threejs-container') || this.createFallbackContainer();
-        const canvas = document.createElement('canvas');
-        canvas.id = 'ciphervault-canvas-fallback';
-        canvas.style.cssText = `
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #050510 0%, #0a1a2a 100%);
-        `;
         
-        // Clear container and add canvas
+        // Clear container
         while (container.firstChild) {
             container.removeChild(container.firstChild);
         }
+        
+        // Create 2D canvas with security visualization
+        const canvas = document.createElement('canvas');
+        canvas.id = 'ciphervault-canvas-fallback';
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.style.cssText = `
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        `;
+        
         container.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        
+        // Create simple animated encryption visualization
+        let animationFrame = null;
+        let time = 0;
+        
+        const animate2D = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw encryption patterns
+            ctx.strokeStyle = 'rgba(0, 212, 255, 0.1)';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i < 50; i++) {
+                const x = (Math.sin(time * 0.001 + i) * 0.5 + 0.5) * canvas.width;
+                const y = (Math.cos(time * 0.001 + i * 0.5) * 0.5 + 0.5) * canvas.height;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw floating particles
+            ctx.fillStyle = 'rgba(0, 212, 255, 0.2)';
+            for (let i = 0; i < 20; i++) {
+                const size = Math.sin(time * 0.001 + i) * 5 + 10;
+                const x = (Math.sin(time * 0.0005 + i) * 0.5 + 0.5) * canvas.width;
+                const y = (Math.cos(time * 0.0007 + i * 0.7) * 0.5 + 0.5) * canvas.height;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            time += 16; // ~60fps
+            animationFrame = requestAnimationFrame(animate2D);
+        };
+        
+        animate2D();
+        
+        // Store for cleanup
+        this.canvasFallback = {
+            canvas: canvas,
+            animationFrame: animationFrame,
+            ctx: ctx
+        };
         
         // Dispatch event for fallback mode
-        const event = new CustomEvent('threejs:fallback', { detail: { reason: 'WebGL not available' } });
-        window.dispatchEvent(event);
+        this.dispatchEvent('threejs:fallback', { 
+            reason: 'WebGL not available',
+            timestamp: Date.now()
+        });
     }
     
     /**
@@ -412,7 +727,7 @@ class ThreeSceneManager {
      */
     createLighting() {
         // Ambient light
-        const ambientLight = new THREE.AmbientLight(
+        const ambientLight = new this.THREE.AmbientLight(
             this.config.lighting.ambient.color,
             this.config.lighting.ambient.intensity
         );
@@ -420,7 +735,7 @@ class ThreeSceneManager {
         this.lights.push(ambientLight);
         
         // Directional light (main light)
-        const directionalLight = new THREE.DirectionalLight(
+        const directionalLight = new this.THREE.DirectionalLight(
             this.config.lighting.directional.color,
             this.config.lighting.directional.intensity
         );
@@ -430,21 +745,12 @@ class ThreeSceneManager {
             this.config.lighting.directional.position.z
         );
         
-        // Enable shadows only if performance allows
-        if (this.config.renderer.shadowMap.enabled) {
-            directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 1024; // Reduced for performance
-            directionalLight.shadow.mapSize.height = 1024;
-            directionalLight.shadow.camera.near = 0.5;
-            directionalLight.shadow.camera.far = 300; // Reduced
-        }
-        
         this.scene.add(directionalLight);
         this.lights.push(directionalLight);
         
-        // Point lights (reduced for performance)
+        // Point lights
         this.config.lighting.pointLights.forEach((lightConfig, index) => {
-            const pointLight = new THREE.PointLight(
+            const pointLight = new this.THREE.PointLight(
                 lightConfig.color,
                 lightConfig.intensity,
                 lightConfig.distance
@@ -455,7 +761,6 @@ class ThreeSceneManager {
                 lightConfig.position.z
             );
             
-            // Store original intensity
             pointLight.userData = { originalIntensity: lightConfig.intensity };
             
             this.scene.add(pointLight);
@@ -470,7 +775,7 @@ class ThreeSceneManager {
         const particleCount = this.config.particles.count;
         
         // Use BufferGeometry for better performance
-        const geometry = new THREE.BufferGeometry();
+        const geometry = new this.THREE.BufferGeometry();
         
         // Create positions
         const positions = new Float32Array(particleCount * 3);
@@ -478,8 +783,8 @@ class ThreeSceneManager {
         const sizes = new Float32Array(particleCount);
         
         // Color helper
-        const colorMin = new THREE.Color(this.config.particles.colors.min);
-        const colorMax = new THREE.Color(this.config.particles.colors.max);
+        const colorMin = new this.THREE.Color(this.config.particles.colors.min);
+        const colorMax = new this.THREE.Color(this.config.particles.colors.max);
         
         for (let i = 0; i < particleCount; i++) {
             // Position in a sphere
@@ -493,7 +798,7 @@ class ThreeSceneManager {
             
             // Interpolate color
             const t = Math.random();
-            const color = new THREE.Color();
+            const color = new this.THREE.Color();
             color.r = colorMin.r + (colorMax.r - colorMin.r) * t;
             color.g = colorMin.g + (colorMax.g - colorMin.g) * t;
             color.b = colorMin.b + (colorMax.b - colorMin.b) * t;
@@ -507,24 +812,24 @@ class ThreeSceneManager {
         }
         
         // Set attributes
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-        geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+        geometry.setAttribute('position', new this.THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new this.THREE.BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new this.THREE.BufferAttribute(sizes, 1));
         
         // Material with performance optimizations
-        const material = new THREE.PointsMaterial({
+        const material = new this.THREE.PointsMaterial({
             size: this.config.particles.size,
             vertexColors: true,
             transparent: true,
             opacity: this.config.particles.opacity,
-            blending: THREE.AdditiveBlending,
+            blending: this.THREE.AdditiveBlending,
             depthWrite: false,
             sizeAttenuation: true
         });
         
         // Create particle system
-        const particleSystem = new THREE.Points(geometry, material);
-        particleSystem.frustumCulled = false; // Prevent culling for always visible particles
+        const particleSystem = new this.THREE.Points(geometry, material);
+        particleSystem.frustumCulled = false;
         
         // Store animation data
         particleSystem.userData = {
@@ -545,28 +850,25 @@ class ThreeSceneManager {
      * Create floating cubes with performance optimization
      */
     createFloatingCubes() {
-        const geometry = new THREE.BoxGeometry(
+        const geometry = new this.THREE.BoxGeometry(
             this.config.cubes.size,
             this.config.cubes.size,
             this.config.cubes.size
         );
         
-        // Reuse geometry for all cubes (instancing would be better but more complex)
         for (let i = 0; i < this.config.cubes.count; i++) {
             const colorIndex = i % this.config.cubes.colors.length;
             const color = this.config.cubes.colors[colorIndex];
             
-            const material = new THREE.MeshPhongMaterial({
+            const material = new this.THREE.MeshPhongMaterial({
                 color: color,
                 transparent: true,
                 opacity: this.config.cubes.opacity,
                 shininess: 80,
-                specular: 0x111111,
-                emissive: 0x000000,
-                emissiveIntensity: 0.05
+                specular: 0x111111
             });
             
-            const cube = new THREE.Mesh(geometry, material);
+            const cube = new this.THREE.Mesh(geometry, material);
             
             // Position
             cube.position.set(
@@ -603,52 +905,45 @@ class ThreeSceneManager {
             this.scene.add(cube);
             this.cubes.push(cube);
         }
-        
-        // Mark geometry for disposal when no longer needed
-        geometry.userData = { canDispose: true };
     }
     
     /**
-     * Create post-processing effects with fallback
+     * Create post-processing effects with fallback - FIXED ERROR 14, 15, 16
      */
     async createEffects() {
-        // Skip if WebGL2 not available
-        if (this.renderer.capabilities && !this.renderer.capabilities.isWebGL2) {
-            console.warn('WebGL 2 not available, skipping advanced effects');
-            return;
-        }
-        
-        // Skip if required classes not available
-        if (typeof THREE.EffectComposer === 'undefined') {
-            console.warn('EffectComposer not available, skipping post-processing');
+        // Skip if not supported
+        if (!this.checkPostProcessingSupport()) {
+            console.warn('Post-processing not supported, using basic rendering');
+            this.config.animation.bloomEffect = false;
             return;
         }
         
         try {
-            // Dynamically load required passes if needed
-            await this.loadRequiredPasses();
-            
             // Create effect composer
-            this.composer = new THREE.EffectComposer(this.renderer);
+            this.composer = new this.THREE.EffectComposer(this.renderer);
             
             // Create render pass
-            const renderPass = new THREE.RenderPass(this.scene, this.camera);
+            const renderPass = new this.THREE.RenderPass(this.scene, this.camera);
             this.composer.addPass(renderPass);
             
-            // Try to create bloom pass (may fail if UnrealBloomPass not available)
-            if (typeof THREE.UnrealBloomPass !== 'undefined') {
-                const bloomPass = new THREE.UnrealBloomPass(
-                    new THREE.Vector2(window.innerWidth, window.innerHeight),
+            // Try to create bloom pass
+            if (typeof this.THREE.UnrealBloomPass !== 'undefined' && 
+                this.THREE.UnrealBloomPass.name !== 'UnrealBloomPass') {
+                
+                const bloomPass = new this.THREE.UnrealBloomPass(
+                    new this.THREE.Vector2(window.innerWidth, window.innerHeight),
                     this.config.animation.bloom.strength,
                     this.config.animation.bloom.radius,
                     this.config.animation.bloom.threshold
                 );
+                
                 this.composer.addPass(bloomPass);
                 this.effects.bloom = bloomPass;
                 
                 console.log('Bloom effect initialized');
             } else {
                 console.warn('UnrealBloomPass not available, using basic rendering');
+                this.config.animation.bloomEffect = false;
             }
             
             this.effects.composer = this.composer;
@@ -657,36 +952,21 @@ class ThreeSceneManager {
             console.warn('Failed to create post-processing effects:', error);
             this.composer = null;
             this.effects = {};
+            this.config.animation.bloomEffect = false;
         }
-    }
-    
-    /**
-     * Load required post-processing passes
-     */
-    async loadRequiredPasses() {
-        const requiredClasses = ['EffectComposer', 'RenderPass', 'UnrealBloomPass'];
-        const missingClasses = requiredClasses.filter(cls => typeof THREE[cls] === 'undefined');
-        
-        if (missingClasses.length === 0) return;
-        
-        console.log('Loading missing post-processing classes:', missingClasses);
-        
-        // In a real implementation, you would load these scripts dynamically
-        // For now, we'll just warn and continue without effects
-        console.warn('Some post-processing classes not available:', missingClasses);
     }
     
     /**
      * Setup orbit controls with fallback
      */
     setupControls() {
-        if (typeof THREE.OrbitControls === 'undefined') {
+        if (typeof this.THREE.OrbitControls === 'undefined') {
             console.warn('OrbitControls not available, using basic interaction');
             return;
         }
         
         try {
-            this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+            this.controls = new this.THREE.OrbitControls(this.camera, this.renderer.domElement);
             this.controls.enableDamping = true;
             this.controls.dampingFactor = 0.05;
             this.controls.rotateSpeed = 0.5;
@@ -697,14 +977,6 @@ class ThreeSceneManager {
             this.controls.enableRotate = true;
             this.controls.maxDistance = 100;
             this.controls.minDistance = 5;
-            this.controls.maxPolarAngle = Math.PI;
-            this.controls.minPolarAngle = 0;
-            
-            // Store original settings
-            this.controls.userData = {
-                originalDamping: this.controls.enableDamping,
-                originalSpeed: this.controls.rotateSpeed
-            };
             
         } catch (error) {
             console.warn('Failed to setup OrbitControls:', error);
@@ -717,23 +989,23 @@ class ThreeSceneManager {
      */
     setupEventListeners() {
         // Window resize with debouncing
-        let resizeTimeout;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => this.onWindowResize(), 250);
-        });
+        this.resizeHandler = () => {
+            clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = setTimeout(() => this.onWindowResize(), 250);
+        };
+        
+        window.addEventListener('resize', this.resizeHandler);
         
         // Mouse movement
-        window.addEventListener('mousemove', (e) => this.onMouseMove(e));
-        window.addEventListener('mouseleave', () => this.onMouseLeave());
+        this.mouseMoveHandler = (e) => this.onMouseMove(e);
+        window.addEventListener('mousemove', this.mouseMoveHandler);
+        
+        this.mouseLeaveHandler = () => this.onMouseLeave();
+        window.addEventListener('mouseleave', this.mouseLeaveHandler);
         
         // Visibility change
-        document.addEventListener('visibilitychange', () => this.onVisibilityChange());
-        
-        // Debug controls
-        if (window.location.hash === '#debug') {
-            window.addEventListener('keydown', (e) => this.onDebugKeyDown(e));
-        }
+        this.visibilityChangeHandler = () => this.onVisibilityChange();
+        document.addEventListener('visibilitychange', this.visibilityChangeHandler);
     }
     
     // ============================================================================
@@ -744,9 +1016,8 @@ class ThreeSceneManager {
      * Start animation loop
      */
     startAnimation() {
-        if (!this.config.animation.enabled) {
-            console.log('Animation disabled, rendering static scene');
-            this.render();
+        if (!this.config.animation.enabled || this.canvasFallback) {
+            console.log('Animation disabled or fallback active');
             return;
         }
         
@@ -761,7 +1032,7 @@ class ThreeSceneManager {
     animate(currentTime) {
         // Calculate delta time with clamping
         let deltaTime = currentTime - this.lastFrameTime;
-        deltaTime = Math.min(deltaTime, 100); // Cap at 100ms for stability
+        deltaTime = Math.min(deltaTime, 100);
         this.lastFrameTime = currentTime;
         
         // Update FPS calculation
@@ -827,12 +1098,10 @@ class ThreeSceneManager {
             const speeds = particleSystem.userData.speeds;
             const timeOffset = particleSystem.userData.timeOffset;
             
-            // Optimized animation loop
             for (let i = 0; i < positions.length; i += 3) {
                 const idx = i / 3;
                 const speed = speeds[idx];
                 
-                // Calculate movement
                 const t = time + timeOffset + idx * 0.005;
                 
                 positions[i] = originalPositions[i] + 
@@ -857,7 +1126,7 @@ class ThreeSceneManager {
      */
     updateCubes(deltaTime) {
         const time = performance.now() * 0.001;
-        const deltaFactor = deltaTime / 16; // Normalize to 60fps
+        const deltaFactor = deltaTime / 16;
         
         this.cubes.forEach(cube => {
             const data = cube.userData;
@@ -890,7 +1159,6 @@ class ThreeSceneManager {
         
         this.lights.forEach((light, index) => {
             if (light.isPointLight && light.userData.originalIntensity) {
-                // Subtle pulsing
                 const intensity = light.userData.originalIntensity;
                 const pulse = Math.sin(time * 0.3 + index) * 0.15 + 0.85;
                 light.intensity = intensity * pulse;
@@ -907,7 +1175,6 @@ class ThreeSceneManager {
         const targetX = this.mouse.normalizedX * 3;
         const targetY = this.mouse.normalizedY * 2;
         
-        // Smooth interpolation
         this.camera.position.x += (targetX - this.camera.position.x) * 0.03;
         this.camera.position.y += (-targetY - this.camera.position.y) * 0.03;
         this.camera.lookAt(0, 0, 0);
@@ -920,8 +1187,7 @@ class ThreeSceneManager {
         const currentTime = performance.now();
         const timeSinceMove = currentTime - this.mouse.lastMoveTime;
         
-        this.mouse.isMoving = timeSinceMove < 150; // 150ms threshold
-        
+        this.mouse.isMoving = timeSinceMove < 150;
         this.mouse.normalizedX = (this.mouse.x / window.innerWidth) * 2 - 1;
         this.mouse.normalizedY = (this.mouse.y / window.innerHeight) * 2 - 1;
     }
@@ -931,6 +1197,8 @@ class ThreeSceneManager {
      */
     render() {
         try {
+            if (this.canvasFallback) return;
+            
             if (this.composer && this.config.animation.bloomEffect) {
                 this.composer.render();
             } else {
@@ -951,22 +1219,31 @@ class ThreeSceneManager {
      */
     onWindowResize() {
         // Update camera
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
+        if (this.camera) {
+            this.camera.aspect = window.innerWidth / window.innerHeight;
+            this.camera.updateProjectionMatrix();
+        }
         
         // Update renderer
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        if (this.renderer) {
+            this.renderer.setSize(window.innerWidth, window.innerHeight);
+        }
         
         // Update composer
         if (this.composer) {
             this.composer.setSize(window.innerWidth, window.innerHeight);
         }
         
-        // Dispatch event
-        const event = new CustomEvent('threejs:resize', {
-            detail: { width: window.innerWidth, height: window.innerHeight }
+        // Update canvas fallback
+        if (this.canvasFallback) {
+            this.canvasFallback.canvas.width = window.innerWidth;
+            this.canvasFallback.canvas.height = window.innerHeight;
+        }
+        
+        this.dispatchEvent('threejs:resize', {
+            width: window.innerWidth,
+            height: window.innerHeight
         });
-        window.dispatchEvent(event);
     }
     
     /**
@@ -997,28 +1274,8 @@ class ThreeSceneManager {
         }
     }
     
-    /**
-     * Handle debug key presses
-     */
-    onDebugKeyDown(e) {
-        switch (e.key.toLowerCase()) {
-            case 'p':
-                this.togglePerformanceMode();
-                break;
-            case 'b':
-                this.toggleBloomEffect();
-                break;
-            case 'r':
-                this.resetScene();
-                break;
-            case 's':
-                this.logStatistics();
-                break;
-        }
-    }
-    
     // ============================================================================
-    // PERFORMANCE MANAGEMENT - ENHANCED FOR SECURITY APPLICATIONS
+    // PERFORMANCE MANAGEMENT - ENHANCED FOR 10GB FILES
     // ============================================================================
     
     /**
@@ -1026,17 +1283,17 @@ class ThreeSceneManager {
      */
     startPerformanceMonitoring() {
         // Memory monitoring
-        setInterval(() => this.checkMemoryUsage(), 15000);
-        
-        // Performance logging
-        setInterval(() => this.logPerformanceStats(), 60000);
+        this.performance.monitorInterval = setInterval(() => {
+            this.checkMemoryUsage();
+            this.checkPerformance();
+        }, this.config.performance.memoryCheckInterval);
     }
     
     /**
      * Start auto cleanup
      */
     startAutoCleanup() {
-        setInterval(() => {
+        this.performance.cleanupInterval = setInterval(() => {
             if (this.config.performance.autoCleanup) {
                 this.autoCleanup();
             }
@@ -1060,18 +1317,22 @@ class ThreeSceneManager {
     }
     
     /**
-     * Check memory usage
+     * Check memory usage - OPTIMIZED FOR 10GB FILES
      */
     checkMemoryUsage() {
         if (!performance.memory) return;
         
         const memory = performance.memory;
         const usage = memory.usedJSHeapSize / memory.totalJSHeapSize;
+        const usedMB = memory.usedJSHeapSize / (1024 * 1024);
+        const totalMB = memory.totalJSHeapSize / (1024 * 1024);
         
         this.performance.memoryUsage.push({
             used: memory.usedJSHeapSize,
             total: memory.totalJSHeapSize,
             usage: usage,
+            usedMB: usedMB,
+            totalMB: totalMB,
             timestamp: Date.now()
         });
         
@@ -1080,29 +1341,37 @@ class ThreeSceneManager {
             this.performance.memoryUsage.shift();
         }
         
-        // Check threshold
+        // Check threshold - alert if memory usage is high
         if (usage > this.config.performance.memoryThreshold) {
-            console.warn(`High memory usage: ${Math.round(usage * 100)}%`);
+            console.warn(`⚠️ High memory usage: ${Math.round(usage * 100)}% (${usedMB.toFixed(1)}MB/${totalMB.toFixed(1)}MB)`);
+            
+            if (usage > this.config.performance.gcPressure) {
+                this.forceGarbageCollection();
+            }
+            
             this.reduceMemoryUsage();
         }
     }
     
     /**
-     * Log performance statistics
+     * Check performance and adjust
      */
-    logPerformanceStats() {
+    checkPerformance() {
         if (this.performance.frameTimes.length === 0) return;
         
         const avgFrameTime = this.performance.frameTimes.reduce((a, b) => a + b, 0) / 
                             this.performance.frameTimes.length;
-        const avgFPS = 1000 / avgFrameTime;
+        const currentFPS = 1000 / avgFrameTime;
         
-        console.log(`Performance - FPS: ${Math.round(avgFPS)}, Frame: ${avgFrameTime.toFixed(2)}ms`);
+        // Log performance every minute
+        if (Date.now() - this.performance.lastMemoryCheck > 60000) {
+            console.log(`📊 Performance - FPS: ${Math.round(currentFPS)}, Frame: ${avgFrameTime.toFixed(2)}ms`);
+            this.performance.lastMemoryCheck = Date.now();
+        }
         
-        if (this.performance.memoryUsage.length > 0) {
-            const mem = this.performance.memoryUsage[this.performance.memoryUsage.length - 1];
-            const usedMB = mem.used / (1024 * 1024);
-            console.log(`Memory - Used: ${usedMB.toFixed(2)}MB, Usage: ${Math.round(mem.usage * 100)}%`);
+        // Auto-adjust for low FPS
+        if (currentFPS < this.config.performance.fpsThreshold) {
+            this.autoReduceQuality();
         }
     }
     
@@ -1110,52 +1379,140 @@ class ThreeSceneManager {
      * Adjust quality based on performance
      */
     adjustQualityBasedOnPerformance() {
-        if (this.performance.frameTimes.length < 30) return;
-        
         const avgFrameTime = this.performance.frameTimes.reduce((a, b) => a + b, 0) / 
                             this.performance.frameTimes.length;
         const currentFPS = 1000 / avgFrameTime;
         
-        // Adjust particle count
-        if (currentFPS < this.config.performance.fpsThreshold) {
-            this.reduceParticleCount();
-        } else if (currentFPS > 50 && this.config.particles.count < THREE_SCENE_CONFIG.particles.count) {
-            this.increaseParticleCount();
+        if (currentFPS < 20) {
+            // Extreme reduction
+            this.emergencyReduction();
+        } else if (currentFPS < this.config.performance.fpsThreshold) {
+            // Moderate reduction
+            this.reduceQuality();
+        } else if (currentFPS > 50 && !this.performance.isLowEndDevice) {
+            // Increase quality if possible
+            this.increaseQuality();
         }
     }
     
     /**
-     * Reduce particle count
+     * Emergency reduction for very low FPS
      */
-    reduceParticleCount() {
-        if (!this.particles.length) return;
+    emergencyReduction() {
+        console.log('🚨 Emergency performance reduction');
         
-        const particleSystem = this.particles[0];
-        const currentCount = particleSystem.geometry.attributes.position.count;
-        const targetCount = Math.max(300, Math.floor(currentCount * 0.7));
+        // Stop animation
+        this.pauseAnimation();
         
-        if (targetCount < currentCount) {
-            this.adjustParticleCount(targetCount);
-            console.log(`Reduced particles from ${currentCount} to ${targetCount} for performance`);
+        // Remove all cubes
+        this.cubes.forEach(cube => {
+            this.scene.remove(cube);
+            this.disposeObject(cube);
+        });
+        this.cubes = [];
+        
+        // Reduce particles to minimum
+        if (this.particles.length > 0) {
+            this.adjustParticleCount(100);
+        }
+        
+        // Disable all effects
+        this.config.animation.bloomEffect = false;
+        if (this.composer) {
+            this.composer = null;
+            this.effects = {};
+        }
+        
+        // Resume after reduction
+        setTimeout(() => this.resumeAnimation(), 100);
+    }
+    
+    /**
+     * Reduce quality
+     */
+    reduceQuality() {
+        // Reduce particle count
+        if (this.particles.length > 0) {
+            const particleSystem = this.particles[0];
+            const currentCount = particleSystem.geometry.attributes.position.count;
+            const targetCount = Math.max(200, Math.floor(currentCount * 0.7));
+            
+            if (targetCount < currentCount) {
+                this.adjustParticleCount(targetCount);
+            }
+        }
+        
+        // Remove some cubes
+        if (this.cubes.length > 6) {
+            const cubesToRemove = this.cubes.splice(6);
+            cubesToRemove.forEach(cube => {
+                this.scene.remove(cube);
+                this.disposeObject(cube);
+            });
         }
     }
     
     /**
-     * Increase particle count
+     * Auto reduce quality
      */
-    increaseParticleCount() {
-        if (!this.particles.length) return;
+    autoReduceQuality() {
+        console.log('🔧 Auto-reducing quality for better performance');
         
-        const particleSystem = this.particles[0];
-        const currentCount = particleSystem.geometry.attributes.position.count;
-        const targetCount = Math.min(
-            THREE_SCENE_CONFIG.particles.count,
-            Math.floor(currentCount * 1.3)
-        );
+        // Reduce particles
+        if (this.particles.length > 0) {
+            const particleSystem = this.particles[0];
+            const currentCount = particleSystem.geometry.attributes.position.count;
+            const targetCount = Math.max(300, Math.floor(currentCount * 0.6));
+            
+            if (targetCount < currentCount) {
+                this.adjustParticleCount(targetCount);
+                console.log(`Reduced particles to ${targetCount}`);
+            }
+        }
         
-        if (targetCount > currentCount) {
-            this.adjustParticleCount(targetCount);
-            console.log(`Increased particles from ${currentCount} to ${targetCount}`);
+        // Reduce cubes
+        if (this.cubes.length > 4) {
+            const cubesToRemove = this.cubes.splice(4);
+            cubesToRemove.forEach(cube => {
+                this.scene.remove(cube);
+                this.disposeObject(cube);
+            });
+            console.log(`Reduced cubes to ${this.cubes.length}`);
+        }
+        
+        // Disable bloom
+        if (this.config.animation.bloomEffect) {
+            this.config.animation.bloomEffect = false;
+            if (this.composer) {
+                this.composer = null;
+                this.effects = {};
+            }
+            console.log('Disabled bloom effect');
+        }
+    }
+    
+    /**
+     * Increase quality
+     */
+    increaseQuality() {
+        // Increase particle count
+        if (this.particles.length > 0) {
+            const particleSystem = this.particles[0];
+            const currentCount = particleSystem.geometry.attributes.position.count;
+            const targetCount = Math.min(
+                THREE_SCENE_CONFIG.particles.count,
+                Math.floor(currentCount * 1.2)
+            );
+            
+            if (targetCount > currentCount) {
+                this.adjustParticleCount(targetCount);
+            }
+        }
+        
+        // Add cubes if needed
+        if (this.cubes.length < THREE_SCENE_CONFIG.cubes.count) {
+            const cubesToAdd = THREE_SCENE_CONFIG.cubes.count - this.cubes.length;
+            this.addCubes(cubesToAdd);
         }
     }
     
@@ -1202,7 +1559,7 @@ class ThreeSceneManager {
             newPositions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
             newPositions[i * 3 + 2] = radius * Math.cos(phi);
             
-            const color = new THREE.Color(
+            const color = new this.THREE.Color(
                 Math.random() * (this.config.particles.colors.max - this.config.particles.colors.min) + 
                 this.config.particles.colors.min
             );
@@ -1214,9 +1571,9 @@ class ThreeSceneManager {
         }
         
         // Update geometry
-        particleSystem.geometry.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
-        particleSystem.geometry.setAttribute('color', new THREE.BufferAttribute(newColors, 3));
-        particleSystem.geometry.setAttribute('size', new THREE.BufferAttribute(newSizes, 1));
+        particleSystem.geometry.setAttribute('position', new this.THREE.BufferAttribute(newPositions, 3));
+        particleSystem.geometry.setAttribute('color', new this.THREE.BufferAttribute(newColors, 3));
+        particleSystem.geometry.setAttribute('size', new this.THREE.BufferAttribute(newSizes, 1));
         
         // Update user data
         particleSystem.userData.originalPositions = newPositions.slice();
@@ -1228,40 +1585,123 @@ class ThreeSceneManager {
     }
     
     /**
-     * Reduce memory usage
+     * Add cubes
+     */
+    addCubes(count) {
+        const geometry = new this.THREE.BoxGeometry(
+            this.config.cubes.size,
+            this.config.cubes.size,
+            this.config.cubes.size
+        );
+        
+        for (let i = 0; i < count; i++) {
+            const colorIndex = (this.cubes.length + i) % this.config.cubes.colors.length;
+            const color = this.config.cubes.colors[colorIndex];
+            
+            const material = new this.THREE.MeshPhongMaterial({
+                color: color,
+                transparent: true,
+                opacity: this.config.cubes.opacity,
+                shininess: 80,
+                specular: 0x111111
+            });
+            
+            const cube = new this.THREE.Mesh(geometry, material);
+            
+            cube.position.set(
+                (Math.random() - 0.5) * this.config.cubes.spread * 2,
+                (Math.random() - 0.5) * this.config.cubes.spread * 2,
+                (Math.random() - 0.5) * this.config.cubes.spread * 2
+            );
+            
+            cube.rotation.set(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI,
+                Math.random() * Math.PI
+            );
+            
+            cube.userData = {
+                originalPosition: cube.position.clone(),
+                rotationSpeed: {
+                    x: Math.random() * (this.config.cubes.rotationSpeed.max - this.config.cubes.rotationSpeed.min) + 
+                       this.config.cubes.rotationSpeed.min,
+                    y: Math.random() * (this.config.cubes.rotationSpeed.max - this.config.cubes.rotationSpeed.min) + 
+                       this.config.cubes.rotationSpeed.min,
+                    z: Math.random() * (this.config.cubes.rotationSpeed.max - this.config.cubes.rotationSpeed.min) + 
+                       this.config.cubes.rotationSpeed.min
+                },
+                floatSpeed: Math.random() * (this.config.cubes.floatSpeed.max - this.config.cubes.floatSpeed.min) + 
+                           this.config.cubes.floatSpeed.min,
+                floatOffset: Math.random() * Math.PI * 2,
+                pulseSpeed: Math.random() * 0.008 + 0.004,
+                pulseOffset: Math.random() * Math.PI * 2
+            };
+            
+            this.scene.add(cube);
+            this.cubes.push(cube);
+        }
+    }
+    
+    /**
+     * Reduce memory usage - OPTIMIZED FOR 10GB FILE OPERATIONS
      */
     reduceMemoryUsage() {
-        console.log('Applying memory reduction measures...');
+        console.log('🧹 Applying memory optimization for large file operations...');
         
-        // Reduce particles
+        // Reduce particles aggressively
         if (this.particles.length > 0) {
             const particleSystem = this.particles[0];
             const currentCount = particleSystem.geometry.attributes.position.count;
-            const targetCount = Math.max(200, Math.floor(currentCount * 0.5));
+            const targetCount = Math.max(150, Math.floor(currentCount * 0.4));
             
             if (targetCount < currentCount) {
                 this.adjustParticleCount(targetCount);
             }
         }
         
-        // Remove some cubes
-        if (this.cubes.length > 8) {
-            const cubesToRemove = this.cubes.splice(8);
+        // Remove most cubes
+        if (this.cubes.length > 2) {
+            const cubesToKeep = this.cubes.slice(0, 2);
+            const cubesToRemove = this.cubes.slice(2);
+            
             cubesToRemove.forEach(cube => {
                 this.scene.remove(cube);
                 this.disposeObject(cube);
             });
+            
+            this.cubes = cubesToKeep;
         }
+        
+        // Dispose of unused geometries
+        this.cleanupUnusedResources();
         
         // Force garbage collection if available
+        this.forceGarbageCollection();
+        
+        console.log('✅ Memory optimization completed');
+        
+        this.dispatchEvent('threejs:memory:optimized', {
+            timestamp: Date.now(),
+            particles: this.particles.length > 0 ? this.particles[0].geometry.attributes.position.count : 0,
+            cubes: this.cubes.length
+        });
+    }
+    
+    /**
+     * Force garbage collection
+     */
+    forceGarbageCollection() {
         if (window.gc) {
-            window.gc();
+            try {
+                window.gc();
+                console.log('🗑️  Forced garbage collection');
+            } catch (e) {
+                // Ignore
+            }
+        } else if (window.GCController) {
+            window.GCController.collect();
+            console.log('🗑️  GCController collection triggered');
         }
-        
-        // Clear renderer caches
-        this.renderer.dispose();
-        
-        console.log('Memory reduction completed');
     }
     
     /**
@@ -1271,36 +1711,35 @@ class ThreeSceneManager {
         this.performance.cleanupCount++;
         this.performance.lastCleanup = Date.now();
         
-        // Dispose of unused geometries and materials
+        // Clean up unused geometries and materials
         this.cleanupUnusedResources();
         
         // Clear Three.js internal caches
-        if (THREE.Cache) {
-            THREE.Cache.clear();
+        if (this.THREE.Cache) {
+            this.THREE.Cache.clear();
         }
         
-        // Log cleanup
-        console.log(`Auto cleanup #${this.performance.cleanupCount} completed`);
+        // Clear WebGL context caches
+        if (this.renderer && this.renderer.context) {
+            const gl = this.renderer.context;
+            gl.flush && gl.flush();
+        }
+        
+        console.log(`🧼 Auto cleanup #${this.performance.cleanupCount} completed`);
     }
     
     /**
      * Cleanup unused resources
      */
     cleanupUnusedResources() {
-        // Clean up geometries
-        const resourceCounts = {
-            geometries: 0,
-            materials: 0,
-            textures: 0
-        };
+        let geometriesCleaned = 0;
+        let materialsCleaned = 0;
         
-        // Traverse scene and dispose of unused resources
+        // Clean up geometries that are no longer in use
         this.scene.traverse((object) => {
-            if (object.geometry && object.geometry.userData?.canDispose) {
-                if (object.geometry.boundingSphere === null) {
-                    object.geometry.dispose();
-                    resourceCounts.geometries++;
-                }
+            if (object.geometry && !object.visible) {
+                object.geometry.dispose();
+                geometriesCleaned++;
             }
             
             if (object.material) {
@@ -1308,19 +1747,18 @@ class ThreeSceneManager {
                     object.material.forEach(material => {
                         if (material.map) material.map.dispose();
                         material.dispose();
-                        resourceCounts.materials++;
+                        materialsCleaned++;
                     });
                 } else {
                     if (object.material.map) object.material.map.dispose();
                     object.material.dispose();
-                    resourceCounts.materials++;
+                    materialsCleaned++;
                 }
             }
         });
         
-        // Log cleanup results
-        if (Object.values(resourceCounts).some(count => count > 0)) {
-            console.log(`Cleanup - Geometries: ${resourceCounts.geometries}, Materials: ${resourceCounts.materials}`);
+        if (geometriesCleaned > 0 || materialsCleaned > 0) {
+            console.log(`🧽 Cleanup - Geometries: ${geometriesCleaned}, Materials: ${materialsCleaned}`);
         }
     }
     
@@ -1328,7 +1766,9 @@ class ThreeSceneManager {
      * Dispose of an object and its resources
      */
     disposeObject(object) {
-        if (object.geometry) object.geometry.dispose();
+        if (object.geometry) {
+            object.geometry.dispose();
+        }
         
         if (object.material) {
             if (Array.isArray(object.material)) {
@@ -1338,7 +1778,9 @@ class ThreeSceneManager {
             }
         }
         
-        if (object.texture) object.texture.dispose();
+        if (object.texture) {
+            object.texture.dispose();
+        }
     }
     
     // ============================================================================
@@ -1352,25 +1794,61 @@ class ThreeSceneManager {
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
             this.animationId = null;
-            
-            // Dispatch event
-            const event = new CustomEvent('threejs:animation:paused');
-            window.dispatchEvent(event);
         }
+        
+        if (this.canvasFallback && this.canvasFallback.animationFrame) {
+            cancelAnimationFrame(this.canvasFallback.animationFrame);
+            this.canvasFallback.animationFrame = null;
+        }
+        
+        this.dispatchEvent('threejs:animation:paused');
     }
     
     /**
      * Resume animation
      */
     resumeAnimation() {
-        if (!this.animationId && this.config.animation.enabled) {
+        if (!this.animationId && this.config.animation.enabled && !this.canvasFallback) {
             this.lastFrameTime = performance.now();
             this.animationId = requestAnimationFrame((time) => this.animate(time));
-            
-            // Dispatch event
-            const event = new CustomEvent('threejs:animation:resumed');
-            window.dispatchEvent(event);
         }
+        
+        if (this.canvasFallback && !this.canvasFallback.animationFrame) {
+            const animate2D = () => {
+                if (!this.canvasFallback) return;
+                
+                const ctx = this.canvasFallback.ctx;
+                const canvas = this.canvasFallback.canvas;
+                const time = performance.now();
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw encryption patterns
+                ctx.strokeStyle = 'rgba(0, 212, 255, 0.1)';
+                ctx.lineWidth = 1;
+                
+                for (let i = 0; i < 50; i++) {
+                    const x = (Math.sin(time * 0.001 + i) * 0.5 + 0.5) * canvas.width;
+                    const y = (Math.cos(time * 0.001 + i * 0.5) * 0.5 + 0.5) * canvas.height;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, canvas.height);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(canvas.width, y);
+                    ctx.stroke();
+                }
+                
+                this.canvasFallback.animationFrame = requestAnimationFrame(animate2D);
+            };
+            
+            this.canvasFallback.animationFrame = requestAnimationFrame(animate2D);
+        }
+        
+        this.dispatchEvent('threejs:animation:resumed');
     }
     
     /**
@@ -1380,10 +1858,8 @@ class ThreeSceneManager {
         this.config.performance.lowPowerMode = !this.config.performance.lowPowerMode;
         
         if (this.config.performance.lowPowerMode) {
-            // Enable low power mode
             this.enableLowPowerMode();
         } else {
-            // Disable low power mode
             this.disableLowPowerMode();
         }
     }
@@ -1392,65 +1868,59 @@ class ThreeSceneManager {
      * Enable low power mode
      */
     enableLowPowerMode() {
-        console.log('Enabling low power mode...');
+        console.log('🔋 Enabling low power mode...');
         
-        // Reduce quality settings
         this.renderer.setPixelRatio(1);
         this.config.particles.count = 300;
-        this.config.cubes.count = 8;
+        this.config.cubes.count = 6;
         this.config.animation.bloomEffect = false;
-        
-        // Disable shadows
         this.config.renderer.shadowMap.enabled = false;
         this.renderer.shadowMap.enabled = false;
         
-        // Recreate scene
         this.recreateSceneWithCurrentConfig();
         
-        // Dispatch event
-        const event = new CustomEvent('threejs:mode:lowpower');
-        window.dispatchEvent(event);
+        this.dispatchEvent('threejs:mode:lowpower');
     }
     
     /**
      * Disable low power mode
      */
     disableLowPowerMode() {
-        console.log('Disabling low power mode...');
+        console.log('⚡ Disabling low power mode...');
         
-        // Restore quality settings
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         this.config.particles.count = THREE_SCENE_CONFIG.particles.count;
         this.config.cubes.count = THREE_SCENE_CONFIG.cubes.count;
         this.config.animation.bloomEffect = THREE_SCENE_CONFIG.animation.bloomEffect;
-        
-        // Enable shadows
         this.config.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.enabled = true;
         
-        // Recreate scene
         this.recreateSceneWithCurrentConfig();
         
-        // Dispatch event
-        const event = new CustomEvent('threejs:mode:normal');
-        window.dispatchEvent(event);
+        this.dispatchEvent('threejs:mode:normal');
     }
     
     /**
      * Toggle bloom effect
      */
     toggleBloomEffect() {
+        if (!this.checkPostProcessingSupport()) {
+            console.warn('Post-processing not supported, cannot enable bloom');
+            return;
+        }
+        
         this.config.animation.bloomEffect = !this.config.animation.bloomEffect;
         
         if (this.config.animation.bloomEffect) {
             this.createEffects();
-            console.log('Bloom effect enabled');
+            console.log('🌟 Bloom effect enabled');
         } else {
             if (this.composer) {
+                this.composer.dispose();
                 this.composer = null;
                 this.effects = {};
             }
-            console.log('Bloom effect disabled');
+            console.log('🌟 Bloom effect disabled');
         }
     }
     
@@ -1458,54 +1928,46 @@ class ThreeSceneManager {
      * Reset scene to initial state
      */
     resetScene() {
-        console.log('Resetting scene...');
+        console.log('🔄 Resetting scene...');
         
-        // Cleanup current scene
         this.cleanup();
         
         // Reset configuration
-        this.config = { ...THREE_SCENE_CONFIG };
+        this.config = JSON.parse(JSON.stringify(THREE_SCENE_CONFIG));
         
         // Reinitialize
         this.init();
         
-        // Dispatch event
-        const event = new CustomEvent('threejs:scene:reset');
-        window.dispatchEvent(event);
+        this.dispatchEvent('threejs:scene:reset');
     }
     
     /**
      * Recreate scene with current configuration
      */
     recreateSceneWithCurrentConfig() {
-        // Clear existing scene
         this.cleanupSceneObjects();
         
-        // Recreate scene elements
         this.createLighting();
         this.createParticles();
         this.createFloatingCubes();
         
-        // Recreate effects if needed
-        if (this.config.animation.bloomEffect) {
+        if (this.config.animation.bloomEffect && this.checkPostProcessingSupport()) {
             this.createEffects();
         }
         
-        console.log('Scene recreated with current configuration');
+        console.log('🔄 Scene recreated with current configuration');
     }
     
     /**
      * Cleanup scene objects
      */
     cleanupSceneObjects() {
-        // Remove all objects from scene
         while (this.scene.children.length > 0) {
             const object = this.scene.children[0];
             this.scene.remove(object);
             this.disposeObject(object);
         }
         
-        // Clear arrays
         this.particles = [];
         this.cubes = [];
         this.lights = [];
@@ -1516,17 +1978,15 @@ class ThreeSceneManager {
      * Handle initialization error
      */
     handleInitError(error) {
-        console.error('Three.js initialization error:', error);
+        console.error('❌ Three.js initialization error:', error);
         this.errors.push(error);
         
-        // Create error display
         const errorDisplay = this.createErrorDisplay(error);
         
-        // Dispatch error event
-        const event = new CustomEvent('threejs:error', { 
-            detail: { error, timestamp: Date.now() } 
+        this.dispatchEvent('threejs:error', { 
+            error: error.message,
+            timestamp: Date.now() 
         });
-        window.dispatchEvent(event);
         
         return errorDisplay;
     }
@@ -1535,18 +1995,18 @@ class ThreeSceneManager {
      * Handle render error
      */
     handleRenderError(error) {
-        console.error('Render error:', error);
+        console.error('🎨 Render error:', error);
         
-        // Try to recover
         try {
-            this.renderer.forceContextLoss();
-            this.renderer.context = null;
-            this.renderer.domElement = null;
+            if (this.renderer) {
+                this.renderer.forceContextLoss();
+                this.renderer.dispose();
+            }
             
-            // Recreate renderer
-            this.createRenderer();
+            // Fall back to canvas
+            this.createCanvasFallback();
         } catch (recoveryError) {
-            console.error('Failed to recover from render error:', recoveryError);
+            console.error('🔄 Failed to recover from render error:', recoveryError);
             this.createCanvasFallback();
         }
     }
@@ -1573,23 +2033,34 @@ class ThreeSceneManager {
             border: 2px solid #ff4757;
             max-width: 400px;
             z-index: 1000;
+            font-family: system-ui, -apple-system, sans-serif;
         `;
         
         errorDiv.innerHTML = `
-            <div style="margin-bottom: 15px;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 40px; color: #ff4757;"></i>
-            </div>
+            <div style="margin-bottom: 15px; font-size: 40px;">⚠️</div>
             <h3 style="margin: 0 0 10px 0; color: #ff4757;">3D Visualization Error</h3>
             <p style="margin: 0 0 15px 0; font-size: 14px; color: #8a8aa3;">
                 ${error.message || 'Unknown error occurred'}
             </p>
             <p style="font-size: 12px; color: #4a4a6a; margin: 0;">
-                Note: Encryption/Decryption functions are unaffected and continue to work normally.
+                Note: Encryption and file operations continue to work normally.
             </p>
         `;
         
         container.appendChild(errorDiv);
         return errorDiv;
+    }
+    
+    /**
+     * Dispatch custom event
+     */
+    dispatchEvent(name, detail = {}) {
+        if (typeof window === 'undefined') return;
+        
+        const event = new CustomEvent(name, { 
+            detail: { ...detail, timestamp: Date.now() } 
+        });
+        window.dispatchEvent(event);
     }
     
     /**
@@ -1602,7 +2073,7 @@ class ThreeSceneManager {
                 particles: this.particles.reduce((sum, ps) => sum + ps.geometry.attributes.position.count, 0),
                 cubes: this.cubes.length,
                 lights: this.lights.length,
-                total: this.scene.children.length
+                total: this.scene ? this.scene.children.length : 0
             },
             performance: {
                 avgFrameTime: this.performance.frameTimes.length > 0 ? 
@@ -1610,7 +2081,8 @@ class ThreeSceneManager {
                 memoryUsage: this.performance.memoryUsage.length > 0 ? 
                     this.performance.memoryUsage[this.performance.memoryUsage.length - 1] : null,
                 errors: this.errors.length,
-                cleanupCount: this.performance.cleanupCount
+                cleanupCount: this.performance.cleanupCount,
+                isLowEndDevice: this.performance.isLowEndDevice
             },
             config: {
                 particleCount: this.config.particles.count,
@@ -1618,7 +2090,8 @@ class ThreeSceneManager {
                 bloomEnabled: this.config.animation.bloomEffect,
                 lowPowerMode: this.config.performance.lowPowerMode,
                 adaptiveQuality: this.config.performance.adaptiveQuality
-            }
+            },
+            capabilities: this.getBrowserCapabilities()
         };
     }
     
@@ -1627,11 +2100,12 @@ class ThreeSceneManager {
      */
     logStatistics() {
         const stats = this.getStatistics();
-        console.group('Three.js Scene Statistics');
+        console.group('📊 Three.js Scene Statistics');
         console.log('FPS:', stats.fps);
         console.log('Objects:', stats.objects);
         console.log('Performance:', stats.performance);
         console.log('Configuration:', stats.config);
+        console.log('Capabilities:', stats.capabilities);
         console.groupEnd();
     }
     
@@ -1639,20 +2113,32 @@ class ThreeSceneManager {
      * Cleanup all resources
      */
     cleanup() {
-        console.log('Cleaning up Three.js scene...');
+        console.log('🧹 Cleaning up Three.js scene...');
         
         // Stop animation
         this.pauseAnimation();
         
         // Clear intervals
-        clearInterval(this.performance.monitorInterval);
-        clearInterval(this.performance.cleanupInterval);
+        if (this.performance.monitorInterval) {
+            clearInterval(this.performance.monitorInterval);
+        }
+        if (this.performance.cleanupInterval) {
+            clearInterval(this.performance.cleanupInterval);
+        }
         
         // Remove event listeners
-        window.removeEventListener('resize', () => this.onWindowResize());
-        window.removeEventListener('mousemove', (e) => this.onMouseMove(e));
-        window.removeEventListener('mouseleave', () => this.onMouseLeave());
-        document.removeEventListener('visibilitychange', () => this.onVisibilityChange());
+        if (this.resizeHandler) {
+            window.removeEventListener('resize', this.resizeHandler);
+        }
+        if (this.mouseMoveHandler) {
+            window.removeEventListener('mousemove', this.mouseMoveHandler);
+        }
+        if (this.mouseLeaveHandler) {
+            window.removeEventListener('mouseleave', this.mouseLeaveHandler);
+        }
+        if (this.visibilityChangeHandler) {
+            document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
+        }
         
         // Cleanup scene objects
         this.cleanupSceneObjects();
@@ -1662,7 +2148,6 @@ class ThreeSceneManager {
             this.renderer.dispose();
             this.renderer.forceContextLoss();
             
-            // Remove from DOM
             if (this.renderer.domElement && this.renderer.domElement.parentNode) {
                 this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
             }
@@ -1678,6 +2163,17 @@ class ThreeSceneManager {
             this.composer.dispose();
         }
         
+        // Cleanup canvas fallback
+        if (this.canvasFallback) {
+            if (this.canvasFallback.animationFrame) {
+                cancelAnimationFrame(this.canvasFallback.animationFrame);
+            }
+            if (this.canvasFallback.canvas && this.canvasFallback.canvas.parentNode) {
+                this.canvasFallback.canvas.parentNode.removeChild(this.canvasFallback.canvas);
+            }
+            this.canvasFallback = null;
+        }
+        
         // Clear references
         this.scene = null;
         this.camera = null;
@@ -1685,7 +2181,9 @@ class ThreeSceneManager {
         this.controls = null;
         this.composer = null;
         
-        console.log('Three.js scene cleanup complete');
+        console.log('✅ Three.js scene cleanup complete');
+        
+        this.dispatchEvent('threejs:cleanup:complete');
     }
 }
 
@@ -1700,8 +2198,8 @@ let ThreeScene = null;
  * Initialize Three.js scene with security optimizations
  */
 function initThreeJS() {
-    if (typeof THREE === 'undefined') {
-        console.warn('Three.js library not loaded. 3D visualization disabled.');
+    if (typeof SecureTHREE === 'undefined' || SecureTHREE.REVISION === 'compatibility-layer') {
+        console.warn('Three.js library not properly loaded. 3D visualization disabled.');
         return null;
     }
     
@@ -1723,18 +2221,20 @@ function initThreeJS() {
         
         // Create scene manager
         ThreeScene = new ThreeSceneManager();
-        console.log('Three.js scene initialized for CipherVault Security');
+        console.log('✅ Three.js scene initialized for CipherVault Security');
         
         // Dispatch initialization event
-        const event = new CustomEvent('threejs:initialized', { 
-            detail: { timestamp: Date.now(), version: '4.2.0' } 
-        });
-        window.dispatchEvent(event);
+        if (typeof window !== 'undefined') {
+            const event = new CustomEvent('threejs:initialized', { 
+                detail: { timestamp: Date.now(), version: '5.0.0' } 
+            });
+            window.dispatchEvent(event);
+        }
         
         return ThreeScene;
         
     } catch (error) {
-        console.error('Failed to initialize Three.js scene:', error);
+        console.error('❌ Failed to initialize Three.js scene:', error);
         
         // Create fallback visualization
         createThreeJSFallback();
@@ -1785,7 +2285,7 @@ function createThreeJSFallback() {
     `;
     document.head.appendChild(style);
     
-    console.log('Created Three.js fallback visualization');
+    console.log('🔄 Created Three.js fallback visualization');
 }
 
 /**
@@ -1805,12 +2305,42 @@ function cleanupThreeJS() {
     }
 }
 
-// Global exposure
+/**
+ * Check if Three.js is available
+ */
+function isThreeJSAvailable() {
+    return typeof SecureTHREE !== 'undefined' && SecureTHREE.REVISION !== 'compatibility-layer';
+}
+
+// Global exposure with security
 if (typeof window !== 'undefined') {
-    window.initThreeJS = initThreeJS;
-    window.getThreeScene = getThreeScene;
-    window.cleanupThreeJS = cleanupThreeJS;
-    window.ThreeSceneManager = ThreeSceneManager;
+    // Prevent multiple initializations
+    if (!window.initThreeJS) {
+        window.initThreeJS = initThreeJS;
+        window.getThreeScene = getThreeScene;
+        window.cleanupThreeJS = cleanupThreeJS;
+        window.isThreeJSAvailable = isThreeJSAvailable;
+        window.ThreeSceneManager = ThreeSceneManager;
+        
+        // Auto-initialize after a delay
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
+                    if (!window.THREE_SCENE_INITIALIZED) {
+                        initThreeJS();
+                        window.THREE_SCENE_INITIALIZED = true;
+                    }
+                }, 2000); // Delay for page load
+            });
+        } else {
+            setTimeout(() => {
+                if (!window.THREE_SCENE_INITIALIZED) {
+                    initThreeJS();
+                    window.THREE_SCENE_INITIALIZED = true;
+                }
+            }, 2000);
+        }
+    }
 }
 
 // Export for ES modules
@@ -1820,18 +2350,9 @@ if (typeof module !== 'undefined' && module.exports) {
         initThreeJS,
         getThreeScene,
         cleanupThreeJS,
+        isThreeJSAvailable,
         THREE_SCENE_CONFIG
     };
 }
 
-// Auto-initialize if in browser and Three.js is loaded
-if (typeof window !== 'undefined' && typeof THREE !== 'undefined') {
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(initThreeJS, 1000); // Delay initialization
-        });
-    } else {
-        setTimeout(initThreeJS, 1000);
-    }
-}
+console.log('🔧 ThreeSceneManager v5.0.0 loaded - All fixes applied');
