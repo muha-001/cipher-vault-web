@@ -1,1 +1,322 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CipherVault - وضع عدم الاتصال</title>
+    <!-- CDN Links for offline page (Fonts, Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* CipherVault 3D Pro - Offline Page Styles */
+        /* Version: 4.2.0 - Based on main.css and pwa-manager.js */
+        :root {
+            --primary: #00d4ff;
+            --primary-dark: #0099cc;
+            --secondary: #ff0080;
+            --accent: #00ff88;
+            --dark: #050510;
+            --darker: #0a0a1a;
+            --light: #ffffff;
+            --gray: #8a8aa3;
+            --error: #ff4757;
+            --card-bg: rgba(10, 15, 35, 0.95);
+            --card-border: rgba(0, 212, 255, 0.3);
+            --glow: 0 0 20px rgba(0, 212, 255, 0.5);
+            --radius-xl: 32px;
+            --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+            line-height: 1.6;
+            background-attachment: fixed;
+            overflow-x: hidden; /* Match index.html */
+        }
+
+        .offline-container {
+            max-width: 600px;
+            width: 100%;
+            padding: 40px 30px;
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: var(--radius-xl);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), var(--glow);
+            backdrop-filter: blur(20px);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            z-index: 10; /* Ensure it's above background elements */
+        }
+
+        /* Decorative background elements */
+        .offline-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+            z-index: -1;
+            animation: rotateBg 20s linear infinite;
+        }
+
+        @keyframes rotateBg {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .offline-icon {
+            font-size: 80px;
+            color: var(--error);
+            margin-bottom: 25px;
+            animation: pulse 2s infinite;
+            display: inline-block;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 2.2rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        }
+
+        .subtitle {
+            color: var(--gray);
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .features {
+            text-align: right; /* Right-aligned for RTL */
+            margin: 35px 0;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Align items to the right */
+            gap: 15px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .feature i {
+            font-size: 20px;
+            color: var(--accent);
+            min-width: 24px;
+        }
+
+        .feature span {
+            color: var(--light);
+            font-size: 0.95rem;
+            font-weight: 500;
+            flex-grow: 1;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-width: 200px;
+            padding: 15px 25px;
+            border: none;
+            border-radius: var(--radius-xl);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-normal);
+            text-decoration: none;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary), #cc0066);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 0, 128, 0.4);
+        }
+
+        .status {
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-xl);
+            color: var(--gray);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .status i {
+            color: var(--primary);
+        }
+
+        /* Floating elements background (similar to main.css) */
+        .floating-elements-offline {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0; /* Behind the main container */
+        }
+
+        .floating-icon-offline {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: var(--primary);
+            animation: float 8s ease-in-out infinite;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0) rotate(0deg) scale(1);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            }
+            50% { 
+                transform: translateY(-30px) rotate(180deg) scale(1.1);
+                box-shadow: 0 20px 40px rgba(0, 212, 255, 0.2);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .offline-container {
+                padding: 30px 20px;
+            }
+
+            .offline-icon {
+                font-size: 60px;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .btn {
+                min-width: 150px;
+                padding: 12px 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating background elements -->
+    <div class="floating-elements-offline">
+        <div class="floating-icon-offline" style="top: 15%; left: 10%; animation-delay: 0s;"><i class="fas fa-lock"></i></div>
+        <div class="floating-icon-offline" style="top: 25%; left: 80%; animation-delay: -1s;"><i class="fas fa-shield-alt"></i></div>
+        <div class="floating-icon-offline" style="top: 65%; left: 15%; animation-delay: -2s;"><i class="fas fa-key"></i></div>
+        <div class="floating-icon-offline" style="top: 75%; left: 75%; animation-delay: -3s;"><i class="fas fa-bolt"></i></div>
+    </div>
+
+    <div class="offline-container">
+        <div class="offline-icon">
+            <i class="fas fa-wifi-slash"></i>
+        </div>
+        <h1>أنت غير متصل بالإنترنت</h1>
+        <p class="subtitle">فقدت الاتصال بالشبكة، لكن يمكنك الاستمرار في استخدام الميزات المحلية</p>
+
+        <div class="features">
+            <div class="feature">
+                <span>عرض الملفات المشفرة المحفوظة محلياً</span>
+                <i class="fas fa-lock"></i>
+            </div>
+            <div class="feature">
+                <span>تشفير الملفات الجديدة وحفظها محلياً</span>
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div class="feature">
+                <span>فك تشفير الملفات المحفوظة سابقاً</span>
+                <i class="fas fa-key"></i>
+            </div>
+            <div class="feature">
+                <span>الوصول إلى جميع وظائف التشفير الأساسية</span>
+                <i class="fas fa-bolt"></i>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" onclick="window.location.reload()">
+                <i class="fas fa-redo"></i> إعادة المحاولة
+            </button>
+            <button class="btn btn-secondary" onclick="window.history.back()">
+                <i class="fas fa-arrow-right"></i> العودة
+            </button>
+        </div>
+
+        <div class="status">
+            <i class="fas fa-info-circle"></i>
+            جميع البيانات المشفرة محفوظة بأمان على جهازك
+        </div>
+    </div>
+
+    <script>
+        // Optional: Add some interactive effects when online
+        window.addEventListener('online', function() {
+            // Example: Show a notification or fade out the page before reload
+            alert('تم استعادة الاتصال! جاري إعادة تحميل الصفحة...');
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>
