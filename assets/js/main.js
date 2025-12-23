@@ -10,6 +10,42 @@
 // GLOBAL APPLICATION STATE
 // ============================================================================
 
+// تعريف PerformanceMonitor أولاً لمنع تكرار التعريف
+if (typeof PerformanceMonitor === 'undefined') {
+    class PerformanceMonitor {
+        constructor() {
+            this.metrics = {
+                memory: [],
+                fps: [],
+                loadTime: performance.now()
+            };
+        }
+        
+        trackMemory() {
+            if (performance.memory) {
+                this.metrics.memory.push(performance.memory.usedJSHeapSize);
+            }
+        }
+        
+        trackFPS(fps) {
+            this.metrics.fps.push(fps);
+        }
+        
+        getAverageFPS() {
+            if (this.metrics.fps.length === 0) return 0;
+            return this.metrics.fps.reduce((a, b) => a + b) / this.metrics.fps.length;
+        }
+        
+        getMemoryUsage() {
+            if (this.metrics.memory.length === 0) return 0;
+            return Math.max(...this.metrics.memory) / (1024 * 1024); // MB
+        }
+    }
+    
+    // جعل PerformanceMonitor متاحًا عالميًا للاستخدام
+    window.PerformanceMonitor = PerformanceMonitor;
+}
+
 class CipherVaultApp {
     constructor() {
         // Application state
@@ -2025,64 +2061,39 @@ class CipherVaultApp {
 // GLOBAL INITIALIZATION
 // ============================================================================
 
-// إنشاء نسخة عالمية من التطبيق
-const App = new CipherVaultApp();
+// التحقق مما إذا كان التطبيق قد تم تهيئته مسبقًا لمنع التكرار
+if (typeof window.CipherVaultApp !== 'undefined') {
+    console.warn('CipherVaultApp is already defined. Skipping re-initialization.');
+} else {
+    // إنشاء نسخة عالمية من التطبيق
+    const App = new CipherVaultApp();
 
-// تهيئة عندما يكون DOM جاهزًا
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+    // تهيئة عندما يكون DOM جاهزًا
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            App.init().catch(error => {
+                console.error('Failed to initialize app:', error);
+            });
+        });
+    } else {
         App.init().catch(error => {
             console.error('Failed to initialize app:', error);
         });
-    });
-} else {
-    App.init().catch(error => {
-        console.error('Failed to initialize app:', error);
-    });
-}
+    }
 
-// جعل التطبيق متاحًا عالميًا
-if (typeof window !== 'undefined') {
+    // جعل التطبيق متاحًا عالميًا
     window.CipherVaultApp = App;
-}
+    window.App = App; // اختصار للوصول
 
-// تنظيف عند إغلاق الصفحة
-window.addEventListener('beforeunload', () => {
-    App.cleanup();
-});
-
-// التصدير لـ ES modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { CipherVaultApp, App };
-}
-
-// Performance Monitor Class
-class PerformanceMonitor {
-    constructor() {
-        this.metrics = {
-            memory: [],
-            fps: [],
-            loadTime: performance.now()
-        };
-    }
-    
-    trackMemory() {
-        if (performance.memory) {
-            this.metrics.memory.push(performance.memory.usedJSHeapSize);
+    // تنظيف عند إغلاق الصفحة
+    window.addEventListener('beforeunload', () => {
+        if (window.App && typeof window.App.cleanup === 'function') {
+            window.App.cleanup();
         }
-    }
-    
-    trackFPS(fps) {
-        this.metrics.fps.push(fps);
-    }
-    
-    getAverageFPS() {
-        if (this.metrics.fps.length === 0) return 0;
-        return this.metrics.fps.reduce((a, b) => a + b) / this.metrics.fps.length;
-    }
-    
-    getMemoryUsage() {
-        if (this.metrics.memory.length === 0) return 0;
-        return Math.max(...this.metrics.memory) / (1024 * 1024); // MB
+    });
+
+    // التصدير لـ ES modules
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = { CipherVaultApp, App };
     }
 }
