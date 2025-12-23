@@ -1,1 +1,268 @@
+/* CipherVault 3D Pro - PWA Styles */
+/* Version: 4.3.0 */
 
+/* PWA Install Prompt */
+.pwa-install-prompt {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 380px;
+  max-width: 90vw;
+  background: linear-gradient(135deg, var(--card-bg), var(--darker));
+  border: 3px solid var(--primary);
+  border-radius: var(--radius-xl);
+  padding: 0;
+  z-index: var(--z-modal);
+  box-shadow: var(--shadow-heavy), var(--card-glow);
+  display: none;
+  animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  backdrop-filter: blur(20px);
+  font-family: 'Cairo', sans-serif;
+}
+
+.pwa-install-prompt.show {
+  display: block;
+}
+
+.pwa-prompt-content {
+  padding: 25px;
+}
+
+.pwa-prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.pwa-prompt-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+}
+
+.pwa-prompt-close {
+  background: transparent;
+  border: none;
+  color: var(--gray);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: var(--transition-normal);
+}
+
+.pwa-prompt-close:hover {
+  color: var(--light);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pwa-prompt-body {
+  margin-bottom: 25px;
+}
+
+.pwa-prompt-title {
+  font-family: 'Orbitron', sans-serif;
+  color: var(--light);
+  margin-bottom: 12px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.pwa-prompt-description {
+  color: var(--gray);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.pwa-prompt-features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.pwa-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gray);
+  font-size: 0.9rem;
+}
+
+.pwa-feature i {
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.pwa-prompt-footer {
+  display: flex;
+  gap: 15px;
+}
+
+.pwa-prompt-button {
+  flex: 1;
+  padding: 14px 20px;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  letter-spacing: 0.5px;
+  font-size: 0.95rem;
+}
+
+.pwa-prompt-install {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+}
+
+.pwa-prompt-install:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+}
+
+.pwa-prompt-dismiss {
+  background: transparent;
+  color: var(--gray);
+  border: 2px solid var(--gray);
+}
+
+.pwa-prompt-dismiss:hover {
+  color: var(--light);
+  border-color: var(--light);
+}
+
+.pwa-install-prompt.hiding {
+  animation: slideOutRight 0.3s ease forwards;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(50px) scale(0.9);
+  }
+}
+
+/* PWA Notifications */
+.pwa-notification {
+  position: fixed;
+  bottom: 100px; /* Adjusted from .notification-3d */
+  right: 30px;
+  z-index: var(--z-notification);
+  animation: slideInRight 0.3s ease;
+  max-width: 400px;
+  width: 100%;
+  font-family: 'Cairo', sans-serif;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  border-left: 4px solid;
+}
+
+.notification-icon {
+  font-size: 1.2rem;
+}
+
+.notification-message {
+  flex-grow: 1;
+  font-weight: 500;
+}
+
+.notification-close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.notification-close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pwa-notification.hiding {
+  animation: slideOutRight 0.3s ease forwards;
+}
+
+/* Connection Status */
+.connection-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.connection-status-indicator.online {
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--success);
+}
+
+.connection-status-indicator.offline {
+  background: rgba(255, 71, 87, 0.1);
+  color: var(--error);
+}
+
+.connection-status-indicator.slow {
+  background: rgba(255, 170, 0, 0.1);
+  color: var(--warning);
+}
+
+.connection-status-indicator i {
+  font-size: 1.1rem;
+}
+
+/* PWA Specific Animations */
+@keyframes pulseInstall {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.btn-pwa-install {
+  animation: pulseInstall 2s infinite;
+}
