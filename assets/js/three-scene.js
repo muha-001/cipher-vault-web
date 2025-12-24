@@ -1718,7 +1718,8 @@ class ThreeSceneManager {
         if (this.THREE.Cache) {
             this.THREE.Cache.clear();
         }
-        
+
+     // Clear WebGL context caches 
      if (this.renderer) {
        const gl = this.renderer.getContext();
        if (gl && gl.flush) {
@@ -1726,7 +1727,7 @@ class ThreeSceneManager {
        }
       }
             
-        console.log(`🧼 Auto cleanup #${this.performance.cleanupCount} completed`);
+       console.log(`🧼 Auto cleanup #${this.performance.cleanupCount} completed`);
     }
     
     /**
