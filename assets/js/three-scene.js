@@ -1719,7 +1719,7 @@ class ThreeSceneManager {
             this.THREE.Cache.clear();
         }
 
-     // Clear WebGL context caches 
+     // Clear WebGL context caches to prevent memory leaks on long-running sessions
      if (this.renderer) {
        const gl = this.renderer.getContext();
        if (gl && gl.flush) {
