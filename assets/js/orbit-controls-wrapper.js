@@ -1,3 +1,9 @@
+// orbit-controls-wrapper.js
+// ⭐ ملف وهمي (Wrapper) لجعل OrbitControls.js متوافق مع ES6 Modules
+// ⭐ يستخدمه three-scene.js (الملف المُعدّل) للحصول على OrbitControls
+
+// ⭐ استيراد المكونات المطلوبة من three.module.js
+// ⭐ هذه هي المكونات التي يعتمد عليها OrbitControls.js الأصلي
 import {
 	Controls,
 	MOUSE,
@@ -9,30 +15,20 @@ import {
 	Plane,
 	Ray,
 	MathUtils
-} from 'three';
+} from './three.module.js';
 
-/**
- * Fires when the camera has been transformed by the controls.
- *
- * @event OrbitControls#change
- * @type {Object}
- */
+// ⭐ استيراد الكود الأصلي من OrbitControls.js الأصلي (الذي أرسلته)
+// ⭐ نسخة مبسطة تُستخدم فقط لتحديد OrbitControls ككلاس
+// ⭐ (في الواقع، نحن نستخدم الكود الأصلي أدناه)
+// ⭐ لا حاجة لتحديد المتغيرات أو الكائنات هنا لأنها معرفة داخل الكود الأصلي
+
+// ========================================================================
+// ⭐ الكود الأصلي من OrbitControls.js (r182) - يبدأ هنا
+// ========================================================================
+
+// ⭐ المتغيرات العامة
 const _changeEvent = { type: 'change' };
-
-/**
- * Fires when an interaction was initiated.
- *
- * @event OrbitControls#start
- * @type {Object}
- */
 const _startEvent = { type: 'start' };
-
-/**
- * Fires when an interaction has finished.
- *
- * @event OrbitControls#end
- * @type {Object}
- */
 const _endEvent = { type: 'end' };
 
 const _ray = new Ray();
@@ -54,45 +50,9 @@ const _STATE = {
 };
 const _EPS = 0.000001;
 
-
-/**
- * Orbit controls allow the camera to orbit around a target.
- *
- * OrbitControls performs orbiting, dollying (zooming), and panning. Unlike {@link TrackballControls},
- * it maintains the "up" direction `object.up` (+Y by default).
- *
- * - Orbit: Left mouse / touch: one-finger move.
- * - Zoom: Middle mouse, or mousewheel / touch: two-finger spread or squish.
- * - Pan: Right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move.
- *
- * ```js
- * const controls = new OrbitControls( camera, renderer.domElement );
- *
- * // controls.update() must be called after any manual changes to the camera's transform
- * camera.position.set( 0, 20, 100 );
- * controls.update();
- *
- * function animate() {
- *
- * 	// required if controls.enableDamping or controls.autoRotate are set to true
- * 	controls.update();
- *
- * 	renderer.render( scene, camera );
- *
- * }
- * ```
- *
- * @augments Controls
- * @three_import import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
- */
+// ⭐ تعريف الكلاس OrbitControls (مطابق للكود الأصلي)
 class OrbitControls extends Controls {
 
-	/**
-	 * Constructs a new controls instance.
-	 *
-	 * @param {Object3D} object - The object that is managed by the controls.
-	 * @param {?HTMLElement} domElement - The HTML element used for event listeners.
-	 */
 	constructor( object, domElement = null ) {
 
 		super( object, domElement );
@@ -1450,6 +1410,10 @@ class OrbitControls extends Controls {
 
 }
 
+// ========================================================================
+// ⭐ تعريف الوظائف المطلوبة (مطابق للكود الأصلي)
+// ========================================================================
+
 function onPointerDown( event ) {
 
 	if ( this.enabled === false ) return;
@@ -1857,4 +1821,13 @@ function interceptControlUp( event ) {
 
 }
 
+// ========================================================================
+// ⭐ التصدير (Export)
+// ========================================================================
+
+// ⭐ تصدير OrbitControls كـ ES6 Module
 export { OrbitControls };
+
+// ========================================================================
+// ⭐ النهاية
+// ========================================================================
