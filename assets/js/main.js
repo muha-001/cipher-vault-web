@@ -93,7 +93,7 @@ password: '',
 settings: {
 verifyIntegrity: true,
 wipeMemory: true,
-keepMetadata: false,
+keepMeta: false,
 autoOpen: false
 }
 },
@@ -363,9 +363,6 @@ if (!window.ThreeScene) {
 window.ThreeScene = new ThreeSceneManager();
 this.components.threejs = window.ThreeScene;
 console.log('✅ Three.js scene initialized directly via ThreeSceneManager');
-} else {
-this.components.threejs = window.ThreeScene;
-console.log('✅ Three.js scene already initialized, reusing instance');
 }
 } catch (directError) {
 console.warn('Direct Three.js initialization also failed:', directError);
