@@ -1,10 +1,27 @@
 /*!
- * CipherVault 3D Pro - Main Application File
- * Version: 4.3.0 - Enhanced & Fixed for Local Files & r182 Compatibility
- *
- * This file initializes and orchestrates all components of the CipherVault application.
- * It serves as the main entry point for the encryption/decryption system.
+ * CipherVault 3D Pro - Main Application File (ES6 Module Version)
+ * Version: 4.4.0 - Enhanced & Fixed for ES6 Modules & r182 Compatibility
  */
+
+// ⭐ استيراد Three.js كـ ES6 Module
+import * as THREE from './three.module.js';
+
+// ⭐ استيراد ThreeSceneManager
+import { ThreeSceneManager } from './three-scene.js';
+
+// ⭐ استيراد الملفات الأخرى حسب الحاجة
+import './config.js';
+import './translations.js';
+import './crypto-core.js';
+import './crypto-military.js';
+import './crypto-worker.js';
+import './audit-log.js';
+import './security-audit.js';
+import './pwa-manager.js';
+import './ui-manager.js';
+import './file-processor.js';
+import './recovery-system.js';
+import './worker-manager.js';
 
 // ============================================================================
 // GLOBAL APPLICATION STATE
@@ -142,7 +159,7 @@ console.log('CipherVault App initialized');
 * Initialize the entire application
 */
 async init() {
-console.log('🚀 Initializing CipherVault 3D Pro v4.3.0...');
+console.log('🚀 Initializing CipherVault 3D Pro v4.4.0 (ES6 Module)...');
 console.log('🔧 Checking browser compatibility...');
 try {
 await this.checkRequirements();
@@ -280,7 +297,7 @@ this.ui.elements.warningStatus = document.getElementById('warning-status');
 this.ui.elements.infoStatus = document.getElementById('info-status');
 this.ui.elements.successText = document.getElementById('success-text');
 this.ui.elements.errorText = document.getElementById('error-text');
-this.ui.elements.warningText = document.getElementById('warning-text');
+this.ui.elements.warningText = document.getElementById('error-text');
 this.ui.elements.infoText = document.getElementById('info-text');
 
 // Statistics
@@ -345,34 +362,27 @@ this.components.militaryCrypto = window.MilitaryCryptoEngine;
 console.log('✓ Military crypto system initialized');
 }
 
-// Initialize Three.js Scene - مع معالجة أفضل للأخطاء
+// Initialize Three.js Scene - مع تعديل لـ ES6
 // ⭐ التأكد من أن ThreeSceneManager قد تم تعريفه
-if (typeof ThreeSceneManager !== 'undefined' && typeof initThreeJS === 'function') {
+if (typeof ThreeSceneManager !== 'undefined') {
 try {
 // ⭐ تهيئة Three.js مع التأكد من تحميل الملفات أولاً
-await this.waitForThreeJSLoad();
-initThreeJS();
-// ⭐ الحصول على مرجع للمكون
-this.components.threejs = window.getThreeScene();
-console.log('✅ Three.js scene initialized via ThreeSceneManager');
-} catch (error) {
-console.warn('Three.js initialization failed via initThreeJS:', error);
-// ⭐ محاولة مباشرة لتهيئة ThreeSceneManager إذا فشل initThreeJS
-try {
-if (!window.ThreeScene) {
-window.ThreeScene = new ThreeSceneManager();
-this.components.threejs = window.ThreeScene;
-console.log('✅ Three.js scene initialized directly via ThreeSceneManager');
+// ⭐ استخدام THREE من الاستيراد
+if (typeof THREE !== 'undefined') {
+console.log('✅ Three.js (ES6 Module) is available, initializing scene...');
+this.components.threejs = new ThreeSceneManager(THREE); // تمرير THREE كمعلمة
+await this.components.threejs.init();
+console.log('✅ Three.js scene initialized via ThreeSceneManager (ES6)');
+} else {
+console.warn('Three.js (ES6 Module) not available, skipping 3D initialization.');
+this.showStatus('warning', 'threejs_warning', '3D effects not available. Encryption/Decryption will still work.');
 }
-} catch (directError) {
-console.warn('Direct Three.js initialization also failed:', directError);
-// استمر حتى لو فشلت Three.js، فهي ليست أساسية للتشفير
+} catch (error) {
+console.warn('Three.js initialization failed:', error);
 this.showStatus('warning', 'threejs_warning', '3D effects initialization failed. Encryption/Decryption will still work.');
 }
-}
 } else {
-console.warn('ThreeSceneManager or initThreeJS not found, skipping 3D initialization.');
-// استمر حتى لو فشلت Three.js، فهي ليست أساسية للتشفير
+console.warn('ThreeSceneManager not found, skipping 3D initialization.');
 this.showStatus('warning', 'threejs_warning', '3D effects not available. Encryption/Decryption will still work.');
 }
 
@@ -401,32 +411,6 @@ console.log('✓ Worker manager initialized');
 }
 
 console.log('✅ Subsystems initialized');
-}
-
-/**
-* ⭐ دالة للانتظار حتى تحميل Three.js بالكامل
-*/
-waitForThreeJSLoad() {
-return new Promise((resolve, reject) => {
-const maxWaitTime = 5000; // 5 seconds
-const checkInterval = 100; // 100ms
-let elapsedTime = 0;
-
-const check = () => {
-elapsedTime += checkInterval;
-if (typeof THREE !== 'undefined' && typeof ThreeSceneManager !== 'undefined') {
-console.log('✅ Three.js and ThreeSceneManager are loaded');
-resolve();
-} else if (elapsedTime >= maxWaitTime) {
-console.warn('⚠️ Timeout waiting for Three.js to load');
-reject(new Error('Three.js failed to load within timeout period'));
-} else {
-setTimeout(check, checkInterval);
-}
-};
-
-check();
-});
 }
 
 /**
@@ -871,7 +855,7 @@ cpuCores: this.state.ui.cpuCores
 */
 exportConfig() {
 const config = {
-version: '4.3.0',
+version: '4.4.0',
 state: this.state,
 timestamp: Date.now()
 };
@@ -922,13 +906,13 @@ return CipherVaultAppInstance;
 
 try {
 // ⭐ التأكد من تحميل جميع المكونات المطلوبة
-await waitForCriticalScripts();
+// ⭐ لا نحتاج إلى انتظار الملفات كما في الإصدار القديم لأن ES6 Modules يُدير التحميل تلقائيًا
 
 CipherVaultAppInstance = new CipherVaultApp();
 await CipherVaultAppInstance.init();
 CipherVaultAppInstance.setupEventListeners();
 
-console.log('✅ CipherVault App fully initialized');
+console.log('✅ CipherVault App fully initialized (ES6 Module)');
 
 // Dispatch initialization event
 window.dispatchEvent(new CustomEvent('ciphervault:initialized', {
@@ -938,44 +922,10 @@ detail: { app: CipherVaultAppInstance, timestamp: Date.now() }
 return CipherVaultAppInstance;
 
 } catch (error) {
-console.error('❌ Failed to initialize CipherVault App:', error);
+console.error('❌ Failed to initialize CipherVault App (ES6 Module):', error);
 // ⭐ إظهار رسالة خطأ للمستخدم
 showCriticalError(error);
 }
-}
-
-/**
-* ⭐ دالة للانتظار حتى تحميل الملفات الحرجة
-*/
-function waitForCriticalScripts() {
-return new Promise((resolve, reject) => {
-const maxWaitTime = 10000; // 10 seconds
-const checkInterval = 100; // 100ms
-let elapsedTime = 0;
-
-const check = () => {
-elapsedTime += checkInterval;
-// ⭐ التحقق من تعريف المكونات المطلوبة
-const criticalScriptsLoaded = [
-typeof CryptoEngine !== 'undefined',
-typeof TranslationManager !== 'undefined',
-typeof SecurityAudit !== 'undefined',
-// لا نتحقق من Three.js هنا لأنه غير حرج
-].every(loaded => loaded === true);
-
-if (criticalScriptsLoaded) {
-console.log('✅ Critical scripts are loaded');
-resolve();
-} else if (elapsedTime >= maxWaitTime) {
-console.error('❌ Timeout waiting for critical scripts to load');
-reject(new Error('Critical scripts failed to load within timeout period'));
-} else {
-setTimeout(check, checkInterval);
-}
-};
-
-check();
-});
 }
 
 /**
@@ -1026,7 +976,7 @@ Refresh Page
 container.appendChild(errorDiv);
 }
 
-// ⭐ تهيئة التطبيق بعد تحميل DOM وانتظار قصير لضمان تحميل الملفات الأخرى
+// ⭐ تهيئة التطبيق بعد تحميل DOM
 if (typeof window !== 'undefined') {
 if (document.readyState === 'loading') {
 document.addEventListener('DOMContentLoaded', () => {
@@ -1052,4 +1002,4 @@ if (typeof module !== 'undefined' && module.exports) {
 module.exports = { CipherVaultApp, initializeCipherVaultApp };
 }
 
-console.log('🔧 CipherVaultApp v4.3.0 main.js loaded - All fixes applied');
+console.log('🔧 CipherVaultApp v4.4.0 (ES6 Module) main.js loaded - All fixes applied');
