@@ -1,9 +1,10 @@
 /*!
- * CipherVault 3D Secure Scene Manager (ES6 Module Version)
- * Version: 5.1.0 - Security Enhanced & ES6 Compatible
+ * CipherVault 3D Secure Scene Manager (ES6 Module Version - Updated)
+ * Version: 5.2.0 - Security Enhanced & ES6 Compatible
  *
  * This file manages the 3D scene using Three.js.
  * It is now compatible with ES6 Modules and imports Three.js.
+ * Updated to use post-processing wrappers for ES6 compatibility.
  */
 
 // ⭐ استيراد Three.js من الملف المحدد
@@ -12,7 +13,15 @@ import * as THREE from './three.module.js';
 // ⭐ استيراد مكونات Three.js الأخرى (يجب أن تكون متوفرة كـ ES6 Modules أيضًا)
 // نحتاج إلى ملفات وهمية (Wrappers) لجعل OrbitControls و PostProcessing تعمل
 import { OrbitControls } from './orbit-controls-wrapper.js';
-// import { EffectComposer, RenderPass, ShaderPass } from './postprocessing-wrapper.js'; // إذا كنت ستحتاجها
+
+// ⭐ استيراد Post-Processing من ملفات Wrapper جديدة (مُنشأة حديثًا)
+import { EffectComposer, RenderPass, ShaderPass } from './postprocessing-wrapper.js';
+
+// ⭐ استيراد Shaders من ملف Wrapper جديد (مُنشأ حديثًا)
+import { CopyShader } from './shader-wrapper.js';
+
+// ⭐ (اختياري) استيراد Bloom من ملف Wrapper جديد (مُنشأ حديثًا)
+// import { UnrealBloomPass } from './bloom-wrapper.js'; // قم بإزالة التعليق إذا كنت تستخدم bloom
 
 // ============================================================================
 // THREE.JS SECURE SCENE CONFIGURATION - ENHANCED FOR SECURITY APPLICATIONS
@@ -143,7 +152,7 @@ mobileOptimizations: true
 }
 ;
 // ============================================================================
-// THREE.JS COMPATIBILITY LAYER - FIXED FOR MISSING CLASSES
+// THREE.JS COMPATIBILITY LAYER - FIXED FOR MISSING CLASSES (Updated to remove fallbacks for imported classes)
 // ============================================================================
 // Create safe reference to THREE
 const SecureTHREE = (function() {
@@ -170,92 +179,19 @@ REVISION: 'compatibility-layer'
 }
 // Check for required post-processing classes
 const missingClasses = [];
-// Define CopyShader if missing (ERROR 15 FIX)
-if (typeof THREE.CopyShader === 'undefined') {
-console.warn('THREE.CopyShader not found. Creating basic implementation.');
-THREE.CopyShader = {
-uniforms: {
-"tDiffuse": { value: null },
-"opacity": { value: 1.0 }
-},
-vertexShader: `
-varying vec2 vUv;
-void main() {
-vUv = uv;
-gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-}
-`,
-fragmentShader: `
-uniform float opacity;
-uniform sampler2D tDiffuse;
-varying vec2 vUv;
-void main() {
-vec4 texel = texture2D(tDiffuse, vUv);
-gl_FragColor = opacity * texel;
-}
-`
-};
-missingClasses.push('CopyShader');
-}
-// Define UnrealBloomPass placeholder if missing (ERROR 16 FIX)
-if (typeof THREE.UnrealBloomPass === 'undefined') {
-THREE.UnrealBloomPass = class UnrealBloomPass {
-constructor() {
-console.warn('UnrealBloomPass not available, using basic rendering');
-this.enabled = false;
-}
-render() {}
-setSize() {}
-};
-missingClasses.push('UnrealBloomPass');
-}
-// Define EffectComposer if missing
-if (typeof THREE.EffectComposer === 'undefined') {
-THREE.EffectComposer = class EffectComposer {
-constructor(renderer) {
-this.renderer = renderer;
-this.passes = [];
-this.enabled = true;
-}
-addPass(pass) {
-this.passes.push(pass);
-}
-render() {
-this.renderer.render(this.passes[0].scene, this.passes[0].camera);
-}
-setSize() {}
-dispose() {}
-};
-missingClasses.push('EffectComposer');
-}
-// Define RenderPass if missing
-if (typeof THREE.RenderPass === 'undefined') {
-THREE.RenderPass = class RenderPass {
-constructor(scene, camera) {
-this.scene = scene;
-this.camera = camera;
-this.enabled = true;
-}
-};
-missingClasses.push('RenderPass');
-}
-// Define ShaderPass if missing
-if (typeof THREE.ShaderPass === 'undefined') {
-THREE.ShaderPass = class ShaderPass {
-constructor(shader) {
-this.shader = shader;
-this.enabled = true;
-}
-};
-missingClasses.push('ShaderPass');
-}
+// Define CopyShader if missing (ERROR 15 FIX - REMOVED as it's now imported)
+// Define UnrealBloomPass placeholder if missing (ERROR 16 FIX - REMOVED as it's now imported)
+// Define EffectComposer if missing (REMOVED as it's now imported)
+// Define RenderPass if missing (REMOVED as it's now imported)
+// Define ShaderPass if missing (REMOVED as it's now imported)
+// If any classes were missing, log them
 if (missingClasses.length > 0) {
 console.log('Missing Three.js classes auto-created:', missingClasses);
 }
 return THREE;
 })();
 // ============================================================================
-// THREE.JS SECURE SCENE MANAGER - FIXED VERSION (ES6 Compatible)
+// THREE.JS SECURE SCENE MANAGER - FIXED VERSION (ES6 Compatible - Updated)
 // ============================================================================
 
 // ⭐ تعديل لجعله كلاس قابل للتصدير
@@ -268,7 +204,7 @@ this.scene = null;
 this.camera = null;
 this.renderer = null;
 this.controls = null;
-this.composer = null;
+this.composer = null; // Will now be initialized using imported EffectComposer
 // Scene objects
 this.particles = [];
 this.cubes = [];
@@ -307,13 +243,13 @@ this.errors = [];
 this.init();
 }
 // ============================================================================
-// INITIALIZATION - WITH ENHANCED ERROR HANDLING
+// INITIALIZATION - WITH ENHANCED ERROR HANDLING (Updated)
 // ============================================================================
 /**
 * Initialize Three.js scene with enhanced error handling
 */
 init() {
-console.log('🚀 Initializing Secure Three.js Scene Manager (ES6 Module)...');
+console.log('🚀 Initializing Secure Three.js Scene Manager (ES6 Module - Updated)...');
 try {
 // Check if Three.js is available
 if (typeof this.THREE === 'undefined' || this.THREE.REVISION === 'compatibility-layer') {
@@ -340,7 +276,8 @@ this.createRenderer();
 this.createLighting();
 this.createParticles();
 this.createFloatingCubes();
-// Create effects (with fallback) - FIXED ERROR 14, 16
+// Create effects (with fallback) - FIXED ERROR 14, 16 (Updated)
+// ⭐ التحقق من دعم Post-Processing باستخدام الملفات المُستوردة
 if (this.config.animation.bloomEffect && this.checkPostProcessingSupport()) {
 this.createEffects();
 } else {
@@ -359,18 +296,18 @@ this.startPerformanceMonitoring();
 if (this.config.performance.autoCleanup) {
 this.startAutoCleanup();
 }
-console.log('✅ Three.js scene initialized successfully (ES6 Module)');
-console.log(`   - Particles: ${this.config.particles.count}`);
-console.log(`   - Cubes: ${this.config.cubes.count}`);
-console.log(`   - Effects: ${this.config.animation.bloomEffect ? 'Enabled' : 'Disabled'}`);
+console.log('✅ Three.js scene initialized successfully (ES6 Module - Updated)');
+console.log(` - Particles: ${this.config.particles.count}`);
+console.log(` - Cubes: ${this.config.cubes.count}`);
+console.log(` - Effects: ${this.config.animation.bloomEffect ? 'Enabled' : 'Disabled'}`);
 // Dispatch initialization event
 this.dispatchEvent('threejs:initialized', {
 timestamp: Date.now(),
-version: '5.1.0',
+version: '5.2.0',
 capabilities: capabilities
 });
 } catch (error) {
-console.error('❌ Failed to initialize Three.js scene (ES6 Module):', error);
+console.error('❌ Failed to initialize Three.js scene (ES6 Module - Updated):', error);
 this.errors.push(error);
 this.handleInitError(error);
 this.createCanvasFallback();
@@ -450,11 +387,26 @@ return false;
 }
 }
 /**
-* Check post-processing support - FIXED ERROR 14
+* Check post-processing support - FIXED ERROR 14 (Updated)
+* Now checks for imported classes instead of THREE global ones
 */
 checkPostProcessingSupport() {
-const requiredClasses = ['EffectComposer', 'RenderPass', 'CopyShader'];
-const missingClasses = requiredClasses.filter(cls => typeof this.THREE[cls] === 'undefined');
+// ⭐ استخدام الفئات المُستوردة مباشرة
+const requiredClasses = [EffectComposer, RenderPass, CopyShader]; // ShaderPass is also imported
+const missingClasses = [];
+requiredClasses.forEach(cls => {
+if (typeof cls === 'undefined') {
+missingClasses.push(cls.name || 'UnknownClass');
+}
+});
+// ⭐ (اختياري) التحقق من UnrealBloomPass إذا كنت تستخدمه
+/*
+if (this.config.animation.bloomEffect) {
+if (typeof UnrealBloomPass === 'undefined') {
+missingClasses.push('UnrealBloomPass');
+}
+}
+*/
 if (missingClasses.length > 0) {
 console.warn('Some post-processing classes not available:', missingClasses);
 return false;
@@ -812,7 +764,7 @@ this.cubes.push(cube);
 }
 }
 /**
-* Create post-processing effects with fallback - FIXED ERROR 14, 15, 16
+* Create post-processing effects with fallback - FIXED ERROR 14, 15, 16 (Updated)
 */
 async createEffects() {
 // Skip if not supported
@@ -822,15 +774,15 @@ this.config.animation.bloomEffect = false;
 return;
 }
 try {
-// Create effect composer
-this.composer = new this.THREE.EffectComposer(this.renderer);
-// Create render pass
-const renderPass = new this.THREE.RenderPass(this.scene, this.camera);
+// ⭐ استخدام EffectComposer المُستورد
+this.composer = new EffectComposer(this.renderer); // ⭐ تم التغيير هنا
+// ⭐ استخدام RenderPass المُستورد
+const renderPass = new RenderPass(this.scene, this.camera); // ⭐ تم التغيير هنا
 this.composer.addPass(renderPass);
-// Try to create bloom pass
-if (typeof this.THREE.UnrealBloomPass !== 'undefined' &&
-this.THREE.UnrealBloomPass.name !== 'UnrealBloomPass') {
-const bloomPass = new this.THREE.UnrealBloomPass(
+// ⭐ (اختياري) استخدام UnrealBloomPass المُستورد إذا كنت تستخدم bloom
+/*
+if (this.config.animation.bloomEffect) {
+const bloomPass = new UnrealBloomPass(
 new this.THREE.Vector2(window.innerWidth, window.innerHeight),
 this.config.animation.bloom.strength,
 this.config.animation.bloom.radius,
@@ -839,10 +791,12 @@ this.config.animation.bloom.threshold
 this.composer.addPass(bloomPass);
 this.effects.bloom = bloomPass;
 console.log('Bloom effect initialized');
-} else {
-console.warn('UnrealBloomPass not available, using basic rendering');
-this.config.animation.bloomEffect = false;
 }
+*/
+// ⭐ استخدام ShaderPass المُستورد (مثال)
+// const shaderPass = new ShaderPass(CopyShader); // يمكنك استخدامه لاحقًا
+// this.composer.addPass(shaderPass);
+
 this.effects.composer = this.composer;
 } catch (error) {
 console.warn('Failed to create post-processing effects:', error);
@@ -862,7 +816,7 @@ return;
 try {
 this.controls = new OrbitControls(this.camera, this.renderer.domElement); // ⭐ استخدام OrbitControls من الاستيراد
 
-// ⭐ تعطيل التفاعل مع حركة الهاتف أو اللمس غير المرغوب فيه
+// ⭐ تعطيل التفاعل مع الحركة الجسدية أو اللمس (كما طلبت)
 this.controls.enableDamping = true;
 this.controls.dampingFactor = 0.05;
 this.controls.rotateSpeed = 0.5;
@@ -1062,6 +1016,7 @@ this.mouse.normalizedY = (this.mouse.y / window.innerHeight) * 2 - 1;
 render() {
 try {
 if (this.canvasFallback) return;
+// ⭐ استخدام this.composer المُهيأ باستخدام ES6 imports
 if (this.composer && this.config.animation.bloomEffect) {
 this.composer.render();
 } else {
@@ -1714,7 +1669,7 @@ this.effects = {};
 * Handle initialization error
 */
 handleInitError(error) {
-console.error('❌ Three.js initialization error (ES6 Module):', error);
+console.error('❌ Three.js initialization error (ES6 Module - Updated):', error);
 this.errors.push(error);
 const errorDisplay = this.createErrorDisplay(error);
 this.dispatchEvent('threejs:error', {
@@ -1727,7 +1682,7 @@ return errorDisplay;
 * Handle render error
 */
 handleRenderError(error) {
-console.error('🎨 Render error (ES6 Module):', error);
+console.error('🎨 Render error (ES6 Module - Updated):', error);
 try {
 if (this.renderer) {
 this.renderer.forceContextLoss();
@@ -1736,7 +1691,7 @@ this.renderer.dispose();
 // Fall back to canvas
 this.createCanvasFallback();
 } catch (recoveryError) {
-console.error('🔄 Failed to recover from render error (ES6 Module):', recoveryError);
+console.error('🔄 Failed to recover from render error (ES6 Module - Updated):', recoveryError);
 this.createCanvasFallback();
 }
 }
@@ -1834,7 +1789,7 @@ console.groupEnd();
 * Cleanup all resources - MODIFIED TO REMOVE DEVICE ORIENTATION LISTENER
 */
 cleanup() {
-console.log('🧹 Cleaning up Three.js scene (ES6 Module)...');
+console.log('🧹 Cleaning up Three.js scene (ES6 Module - Updated)...');
 // Stop animation
 this.pauseAnimation();
 // Clear intervals
@@ -1894,7 +1849,7 @@ this.camera = null;
 this.renderer = null;
 this.controls = null;
 this.composer = null;
-console.log('✅ Three.js scene cleanup complete (ES6 Module)');
+console.log('✅ Three.js scene cleanup complete (ES6 Module - Updated)');
 this.dispatchEvent('threejs:cleanup:complete');
 }
 }
@@ -1932,17 +1887,17 @@ return null;
 }
 // Create scene manager
 ThreeScene = new ThreeSceneManager(THREE); // ⭐ تمرير THREE
-console.log('✅ Three.js scene initialized for CipherVault Security (ES6 Module)');
+console.log('✅ Three.js scene initialized for CipherVault Security (ES6 Module - Updated)');
 // Dispatch initialization event
 if (typeof window !== 'undefined') {
 const event = new CustomEvent('threejs:initialized', {
-detail: { timestamp: Date.now(), version: '5.1.0' }
+detail: { timestamp: Date.now(), version: '5.2.0' }
 });
 window.dispatchEvent(event);
 }
 return ThreeScene;
 } catch (error) {
-console.error('❌ Failed to initialize Three.js scene (ES6 Module):', error);
+console.error('❌ Failed to initialize Three.js scene (ES6 Module - Updated):', error);
 // Create fallback visualization
 createThreeJSFallback();
 return null;
@@ -2057,4 +2012,4 @@ THREE_SCENE_CONFIG
 };
 }
 
-console.log('🔧 ThreeSceneManager v5.1.0 (ES6 Module) loaded - All fixes applied');
+console.log('🔧 ThreeSceneManager v5.2.0 (ES6 Module - Updated) loaded - All fixes applied');
