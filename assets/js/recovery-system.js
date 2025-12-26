@@ -1,5 +1,5 @@
 /**
- * CipherVault 3D Pro - Recovery Syste
+ * CipherVault 3D Pro - Recovery System
  * Implementation of Shamir's Secret Sharing for key recovery
  * Version: 4.2.0
  */
