@@ -1,6 +1,6 @@
 /*!
  * CipherVault 3D Secure Scene Manager (ES6 Module Version - Updated for window.THREE)
- * Version: 5.2.3 - Security Enhanced & ES6 Compatible
+ * Version: 5.2.4 - Security Enhanced & ES6 Compatible
  *
  * This file manages the 3D scene using Three.js.
  * It is now compatible with ES6 Modules and uses window.THREE.
@@ -10,8 +10,8 @@
 // ⛔ حذف هذا السطر:
 // import * as THREE from './three.module.js';
 
-// ⭐ استخدام window.THREE (مُعرف من index.html)
-const THREE = window.THREE;
+// ⛔ تعطيل هذا التعريف:
+// const THREE = window.THREE; // ⛔ هذا تعريف عام، لا نريده
 
 // ⭐ استيراد مكونات Three.js الأخرى (يجب أن تكون متوفرة كـ ES6 Modules أيضًا)
 // نحتاج إلى ملفات وهمية (Wrappers) لجعل OrbitControls و PostProcessing تعمل
@@ -54,7 +54,7 @@ powerPreference: 'high-performance',
 preserveDrawingBuffer: true,
 shadowMap: {
 enabled: false, // Disabled for better performance
-type: THREE ? (THREE.PCFSoftShadowMap || 2) : 2
+type: window.THREE ? (window.THREE.PCFSoftShadowMap || 2) : 2 // ⭐ استخدام window.THREE
 },
 precision: 'highp',
 failIfMajorPerformanceCaveat: false // Allow on lower-end devices
@@ -160,7 +160,7 @@ mobileOptimizations: true
 // Create safe reference to THREE
 const SecureTHREE = (function() {
 // If THREE is not available, create minimal stub
-if (typeof THREE === 'undefined') {
+if (typeof window.THREE === 'undefined') { // ⭐ استخدام window.THREE
 console.warn('THREE.js not loaded. Creating minimal compatibility layer.');
 return {
 WebGLRenderer: function() {
@@ -191,17 +191,17 @@ const missingClasses = [];
 if (missingClasses.length > 0) {
 console.log('Missing Three.js classes auto-created:', missingClasses);
 }
-return THREE;
+return window.THREE; // ⭐ استخدام window.THREE
 })();
 // ============================================================================
 // THREE.JS SECURE SCENE MANAGER - FIXED VERSION (ES6 Compatible - Updated for window.THREE)
 // ============================================================================
 
 // ⭐ تعديل لجعله كلاس قابل للتصدير
-export class ThreeSceneManager {
+export class ThreeSceneManager { // ⭐ تم إضافة export هنا
 constructor(threeLib) {
 // ⭐ استخدام THREE من المعلمة أو من window
-this.THREE = threeLib || window.THREE || SecureTHREE;
+this.THREE = threeLib || window.THREE || SecureTHREE; // ⭐ استخدام window.THREE
 // Three.js components
 this.scene = null;
 this.camera = null;
@@ -306,7 +306,7 @@ console.log(` - Effects: ${this.config.animation.bloomEffect ? 'Enabled' : 'Disa
 // Dispatch initialization event
 this.dispatchEvent('threejs:initialized', {
 timestamp: Date.now(),
-version: '5.2.3',
+version: '5.2.4',
 capabilities: capabilities
 });
 } catch (error) {
@@ -1858,7 +1858,7 @@ this.dispatchEvent('threejs:cleanup:complete');
 }
 
 // ⭐ تصدير ThreeSceneManager
-// export { ThreeSceneManager };
+// export { ThreeSceneManager }; // ⛔ هذا مُعلق، الكلاس مُصدر كـ export default
 
 // ============================================================================
 // GLOBAL INITIALIZATION WITH ERROR HANDLING (Maintained for compatibility)
@@ -1894,7 +1894,7 @@ console.log('✅ Three.js scene initialized for CipherVault Security (ES6 Module
 // Dispatch initialization event
 if (typeof window !== 'undefined') {
 const event = new CustomEvent('threejs:initialized', {
-detail: { timestamp: Date.now(), version: '5.2.3' }
+detail: { timestamp: Date.now(), version: '5.2.4' }
 });
 window.dispatchEvent(event);
 }
@@ -2015,4 +2015,4 @@ THREE_SCENE_CONFIG
 };
 }
 
-console.log('🔧 ThreeSceneManager v5.2.3 (ES6 Module - Updated for window.THREE) loaded - All fixes applied');
+console.log('🔧 ThreeSceneManager v5.2.4 (ES6 Module - Updated for window.THREE) loaded - All fixes applied');
