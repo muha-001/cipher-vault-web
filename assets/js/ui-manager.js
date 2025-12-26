@@ -1,5 +1,5 @@
 /**
- * CipherVault 3D Pro - UI Manager System
+ * CipherVault 3D Pro - UI Manager Syste
  * Manages DOM interactions, notifications, and 3D scene integration
  * Version: 4.2.0
  */
