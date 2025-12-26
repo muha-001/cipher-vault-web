@@ -7,9 +7,6 @@
  * Updated to use post-processing wrappers for ES6 compatibility.
  */
 
-// ⛔ حذف هذا السطر:
-// import * as THREE from './three.module.js';
-
 // ⛔ تعطيل هذا التعريف:
 // const THREE = window.THREE; // ⛔ هذا تعريف عام، لا نريده
 
