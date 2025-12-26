@@ -1,27 +1,27 @@
 /*!
- * CipherVault 3D Pro - Main Application File (ES6 Module Version)
- * Version: 4.4.0 - Enhanced & Fixed for ES6 Modules & r182 Compatibility
+ * CipherVault 3D Pro - Main Application File (ES6 Module Version - Updated for window.THREE)
+ * Version: 4.4.2 - Enhanced & Fixed for ES6 Modules & r182 Compatibility
  */
 
-// ⭐ استيراد Three.js كـ ES6 Module
-import * as THREE from './three.module.js';
+// ⭐ استيراد ThreeSceneManager (الملف المُعدّل حديثًا)
+import { ThreeSceneManager } from './assets/js/three-scene.js';
 
-// ⭐ استيراد ThreeSceneManager
-import { ThreeSceneManager } from './three-scene.js';
+// ⭐ (اختياري) استيراد مكونات من three.core.js إذا كنت ستحتاجها مباشرة
+// import { THREE, OrbitControls, EffectComposer, ... } from './assets/js/three.core.js';
 
-// ⭐ استيراد الملفات الأخرى حسب الحاجة
-import './config.js';
-import './translations.js';
-import './crypto-core.js';
-import './crypto-military.js';
-import './crypto-worker.js';
-import './audit-log.js';
-import './security-audit.js';
-import './pwa-manager.js';
-import './ui-manager.js';
-import './file-processor.js';
-import './recovery-system.js';
-import './worker-manager.js';
+// ⭐ استيراد الملفات الأخرى حسب الحاجة (مثلًا)
+// import './assets/js/config.js';
+// import './assets/js/translations.js';
+// import './assets/js/crypto-core.js';
+// import './assets/js/crypto-military.js';
+// import './assets/js/crypto-worker.js';
+// import './assets/js/audit-log.js';
+// import './assets/js/security-audit.js';
+// import './assets/js/pwa-manager.js';
+// import './assets/js/ui-manager.js';
+// import './assets/js/file-processor.js';
+// import './assets/js/recovery-system.js';
+// import './assets/js/worker-manager.js';
 
 // ============================================================================
 // GLOBAL APPLICATION STATE
@@ -159,7 +159,7 @@ console.log('CipherVault App initialized');
 * Initialize the entire application
 */
 async init() {
-console.log('🚀 Initializing CipherVault 3D Pro v4.4.0 (ES6 Module)...');
+console.log('🚀 Initializing CipherVault 3D Pro v4.4.2 (ES6 Module - Updated for window.THREE)...');
 console.log('🔧 Checking browser compatibility...');
 try {
 await this.checkRequirements();
@@ -175,9 +175,6 @@ this.initUI();
 
 console.log('🔧 Initializing subsystems...');
 await this.initSubsystems();
-
-console.log('🔧 Applying initial settings...');
-this.applyInitialSettings();
 
 console.log('✅ CipherVault App initialized successfully');
 this.updateSecurityStatus();
@@ -362,21 +359,16 @@ this.components.militaryCrypto = window.MilitaryCryptoEngine;
 console.log('✓ Military crypto system initialized');
 }
 
-// Initialize Three.js Scene - مع تعديل لـ ES6
+// Initialize Three.js Scene - مع تعديل لـ ES6 و window.THREE
 // ⭐ التأكد من أن ThreeSceneManager قد تم تعريفه
 if (typeof ThreeSceneManager !== 'undefined') {
 try {
 // ⭐ تهيئة Three.js مع التأكد من تحميل الملفات أولاً
-// ⭐ استخدام THREE من الاستيراد
-if (typeof THREE !== 'undefined') {
-console.log('✅ Three.js (ES6 Module) is available, initializing scene...');
-this.components.threejs = new ThreeSceneManager(THREE); // تمرير THREE كمعلمة
+// ⭐ استخدام THREE من window (مُعرف من index.html)
+console.log('✅ Three.js (ES6 Module) is available via window.THREE, initializing scene...');
+this.components.threejs = new ThreeSceneManager(window.THREE); // ⭐ استخدام window.THREE
 await this.components.threejs.init();
-console.log('✅ Three.js scene initialized via ThreeSceneManager (ES6)');
-} else {
-console.warn('Three.js (ES6 Module) not available, skipping 3D initialization.');
-this.showStatus('warning', 'threejs_warning', '3D effects not available. Encryption/Decryption will still work.');
-}
+console.log('✅ Three.js scene initialized via ThreeSceneManager (ES6 - Updated for window.THREE)');
 } catch (error) {
 console.warn('Three.js initialization failed:', error);
 this.showStatus('warning', 'threejs_warning', '3D effects initialization failed. Encryption/Decryption will still work.');
@@ -855,7 +847,7 @@ cpuCores: this.state.ui.cpuCores
 */
 exportConfig() {
 const config = {
-version: '4.4.0',
+version: '4.4.2',
 state: this.state,
 timestamp: Date.now()
 };
@@ -912,7 +904,7 @@ CipherVaultAppInstance = new CipherVaultApp();
 await CipherVaultAppInstance.init();
 CipherVaultAppInstance.setupEventListeners();
 
-console.log('✅ CipherVault App fully initialized (ES6 Module)');
+console.log('✅ CipherVault App fully initialized (ES6 Module - Updated for window.THREE)');
 
 // Dispatch initialization event
 window.dispatchEvent(new CustomEvent('ciphervault:initialized', {
@@ -922,7 +914,7 @@ detail: { app: CipherVaultAppInstance, timestamp: Date.now() }
 return CipherVaultAppInstance;
 
 } catch (error) {
-console.error('❌ Failed to initialize CipherVault App (ES6 Module):', error);
+console.error('❌ Failed to initialize CipherVault App (ES6 Module - Updated for window.THREE):', error);
 // ⭐ إظهار رسالة خطأ للمستخدم
 showCriticalError(error);
 }
@@ -1002,4 +994,4 @@ if (typeof module !== 'undefined' && module.exports) {
 module.exports = { CipherVaultApp, initializeCipherVaultApp };
 }
 
-console.log('🔧 CipherVaultApp v4.4.0 (ES6 Module) main.js loaded - All fixes applied');
+console.log('🔧 CipherVaultApp v4.4.2 (ES6 Module - Updated for window.THREE) main.js loaded - All fixes applied');
