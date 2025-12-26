@@ -1,31 +1,34 @@
 /*!
- * CipherVault 3D Secure Scene Manager (ES6 Module Version - Updated for three.core.js)
- * Version: 5.2.1 - Security Enhanced & ES6 Compatible
+ * CipherVault 3D Secure Scene Manager (ES6 Module Version - Updated for window.THREE)
+ * Version: 5.2.3 - Security Enhanced & ES6 Compatible
  *
  * This file manages the 3D scene using Three.js.
- * It is now compatible with ES6 Modules and imports Three.js.
- * Updated to use three.core.js for unified imports and initialization.
+ * It is now compatible with ES6 Modules and uses window.THREE.
+ * Updated to use post-processing wrappers for ES6 compatibility.
  */
 
-// ⭐ استيراد Three.js من الملف المحدد (يتم الآن استيراده من three.core.js)
-// ⭐ استيراد المكونات من three.core.js (الملف الجديد الذي أنشأناه)
-import {
-    initializeThreeCore,
-    checkWebGLSupport,
-    checkPostProcessingSupport,
-    OrbitControls,
-    EffectComposer,
-    RenderPass,
-    ShaderPass,
-    CopyShader,
-    FXAAShader,
-    UnrealBloomPass,
-    THREE // ⭐ استيراد THREE من three.core.js
-} from './three.core.js';
+// ⛔ حذف هذا السطر:
+// import * as THREE from './three.module.js';
 
-// ========================================================================
-// THREE.JS SECURE SCENE CONFIGURATION - ENHANCED FOR SECURITY APPLICATIONS (Updated)
-// ========================================================================
+// ⭐ استخدام window.THREE (مُعرف من index.html)
+const THREE = window.THREE;
+
+// ⭐ استيراد مكونات Three.js الأخرى (يجب أن تكون متوفرة كـ ES6 Modules أيضًا)
+// نحتاج إلى ملفات وهمية (Wrappers) لجعل OrbitControls و PostProcessing تعمل
+import { OrbitControls } from './orbit-controls-wrapper.js';
+
+// ⭐ استيراد Post-Processing من ملفات Wrapper جديدة (مُنشأة حديثًا)
+import { EffectComposer, RenderPass, ShaderPass } from './postprocessing-wrapper.js';
+
+// ⭐ استيراد Shaders من ملف Wrapper جديد (مُنشأ حديثًا)
+import { CopyShader } from './shader-wrapper.js';
+
+// ⭐ (اختياري) استيراد Bloom من ملف Wrapper جديد (مُنشأ حديثًا)
+// import { UnrealBloomPass } from './bloom-wrapper.js'; // قم بإزالة التعليق إذا كنت تستخدم bloom
+
+// ============================================================================
+// THREE.JS SECURE SCENE CONFIGURATION - ENHANCED FOR SECURITY APPLICATIONS
+// ============================================================================
 const THREE_SCENE_CONFIG = {
 // Scene settings - optimized for dark security theme
 scene: {
@@ -151,10 +154,10 @@ mobileOptimizations: true
 }
 }
 ;
-// ========================================================================
-// THREE.JS COMPATIBILITY LAYER - FIXED FOR MISSING CLASSES (Updated to remove fallbacks for imported classes from three.core.js)
-// ========================================================================
-// Create safe reference to THREE (Updated)
+// ============================================================================
+// THREE.JS COMPATIBILITY LAYER - FIXED FOR MISSING CLASSES (Updated to remove fallbacks for imported classes)
+// ============================================================================
+// Create safe reference to THREE
 const SecureTHREE = (function() {
 // If THREE is not available, create minimal stub
 if (typeof THREE === 'undefined') {
@@ -177,34 +180,34 @@ Color: function() { return {}; },
 REVISION: 'compatibility-layer'
 };
 }
-// Check for required post-processing classes (Updated - removed from here as they are imported from three.core.js)
+// Check for required post-processing classes
 const missingClasses = [];
-// Define CopyShader if missing (ERROR 15 FIX - REMOVED as it's now imported from three.core.js)
-// Define UnrealBloomPass placeholder if missing (ERROR 16 FIX - REMOVED as it's now imported from three.core.js)
-// Define EffectComposer if missing (REMOVED as it's now imported from three.core.js)
-// Define RenderPass if missing (REMOVED as it's now imported from three.core.js)
-// Define ShaderPass if missing (REMOVED as it's now imported from three.core.js)
+// Define CopyShader if missing (ERROR 15 FIX - REMOVED as it's now imported)
+// Define UnrealBloomPass placeholder if missing (ERROR 16 FIX - REMOVED as it's now imported)
+// Define EffectComposer if missing (REMOVED as it's now imported)
+// Define RenderPass if missing (REMOVED as it's now imported)
+// Define ShaderPass if missing (REMOVED as it's now imported)
 // If any classes were missing, log them
 if (missingClasses.length > 0) {
 console.log('Missing Three.js classes auto-created:', missingClasses);
 }
 return THREE;
 })();
-// ========================================================================
-// THREE.JS SECURE SCENE MANAGER - FIXED VERSION (ES6 Compatible - Updated for three.core.js)
+// ============================================================================
+// THREE.JS SECURE SCENE MANAGER - FIXED VERSION (ES6 Compatible - Updated for window.THREE)
 // ============================================================================
 
 // ⭐ تعديل لجعله كلاس قابل للتصدير
 export class ThreeSceneManager {
 constructor(threeLib) {
-// ⭐ استخدام THREE من المعلمة (Updated to use from three.core.js)
-this.THREE = threeLib || SecureTHREE;
-// Three.js components (Updated to use from three.core.js)
+// ⭐ استخدام THREE من المعلمة أو من window
+this.THREE = threeLib || window.THREE || SecureTHREE;
+// Three.js components
 this.scene = null;
 this.camera = null;
 this.renderer = null;
 this.controls = null;
-this.composer = null; // Will now be initialized using imported EffectComposer from three.core.js
+this.composer = null; // Will now be initialized using imported EffectComposer
 // Scene objects
 this.particles = [];
 this.cubes = [];
@@ -243,22 +246,22 @@ this.errors = [];
 this.init();
 }
 // ============================================================================
-// INITIALIZATION - WITH ENHANCED ERROR HANDLING (Updated for three.core.js)
+// INITIALIZATION - WITH ENHANCED ERROR HANDLING (Updated for window.THREE)
 // ============================================================================
 /**
-* Initialize Three.js scene with enhanced error handling (Updated for three.core.js)
+* Initialize Three.js scene with enhanced error handling
 */
 init() {
-console.log('🚀 Initializing Secure Three.js Scene Manager (ES6 Module - Updated for three.core.js)...');
+console.log('🚀 Initializing Secure Three.js Scene Manager (ES6 Module - Updated for window.THREE)...');
 try {
-// Check if Three.js is available (Updated)
+// Check if Three.js is available
 if (typeof this.THREE === 'undefined' || this.THREE.REVISION === 'compatibility-layer') {
 console.warn('Three.js not properly loaded. Using minimal mode.');
 this.createCanvasFallback();
 return;
 }
-// Check WebGL support (Updated to use function from three.core.js)
-if (!checkWebGLSupport()) { // ⭐ استخدام الوظيفة من three.core.js
+// Check WebGL support
+if (!this.checkWebGLSupport()) {
 console.warn('WebGL not supported. Using canvas fallback.');
 this.createCanvasFallback();
 return;
@@ -268,50 +271,23 @@ const capabilities = this.getBrowserCapabilities();
 console.log('📊 Browser Capabilities:', capabilities);
 // Adjust config based on capabilities
 this.adaptConfigForBrowser(capabilities);
-// ⭐ استخدام وظيفة التهيئة من three.core.js
-const core = initializeThreeCore(document.getElementById('threejs-container'), {
-controls: {
-enableRotate: false, // ⭐ تعطيل التفاعل مع الحركة/اللمس (مهم)
-enablePan: false,
-enableZoom: false,
-enableDamping: true,
-dampingFactor: 0.05
-},
-postProcessing: {
-enabled: this.config.animation.bloomEffect, // ⭐ حسب الإعداد
-effects: {
-bloom: this.config.animation.bloomEffect,
-fxaa: false // ⭐ FXAA مُعطل مبدئيًا
-}
-}
-});
-
-if (!core) {
-console.error('❌ Failed to initialize Three.js Core from three.core.js');
-this.createCanvasFallback();
-return;
-}
-
-// ⭐ تعيين المكونات المُهيّأة
-this.scene = core.scene;
-this.camera = core.camera;
-this.renderer = core.renderer;
-this.controls = core.controls;
-this.composer = core.composer; // ⭐ قد يكون null إذا لم يكن مفعلاً في core
-
+// Create scene components
+this.createScene();
+this.createCamera();
+this.createRenderer();
 // Create scene elements
 this.createLighting();
 this.createParticles();
 this.createFloatingCubes();
-// Create effects (with fallback) - FIXED ERROR 14, 16 (Updated for three.core.js)
-// ⭐ التحقق من دعم Post-Processing باستخدام three.core.js
-if (this.config.animation.bloomEffect && checkPostProcessingSupport()) { // ⭐ استخدام الوظيفة من three.core.js
+// Create effects (with fallback) - FIXED ERROR 14, 16 (Updated)
+// ⭐ التحقق من دعم Post-Processing باستخدام الملفات المُستوردة
+if (this.config.animation.bloomEffect && this.checkPostProcessingSupport()) {
 this.createEffects();
 } else {
 console.log('Post-processing effects disabled for compatibility');
 this.config.animation.bloomEffect = false;
 }
-// Setup controls (Updated to use from three.core.js)
+// Setup controls
 this.setupControls();
 // Setup event listeners
 this.setupEventListeners();
@@ -323,18 +299,18 @@ this.startPerformanceMonitoring();
 if (this.config.performance.autoCleanup) {
 this.startAutoCleanup();
 }
-console.log('✅ Three.js scene initialized successfully (ES6 Module - Updated for three.core.js)');
+console.log('✅ Three.js scene initialized successfully (ES6 Module - Updated for window.THREE)');
 console.log(` - Particles: ${this.config.particles.count}`);
 console.log(` - Cubes: ${this.config.cubes.count}`);
 console.log(` - Effects: ${this.config.animation.bloomEffect ? 'Enabled' : 'Disabled'}`);
 // Dispatch initialization event
 this.dispatchEvent('threejs:initialized', {
 timestamp: Date.now(),
-version: '5.2.1',
+version: '5.2.3',
 capabilities: capabilities
 });
 } catch (error) {
-console.error('❌ Failed to initialize Three.js scene (ES6 Module - Updated for three.core.js):', error);
+console.error('❌ Failed to initialize Three.js scene (ES6 Module - Updated for window.THREE):', error);
 this.errors.push(error);
 this.handleInitError(error);
 this.createCanvasFallback();
@@ -363,7 +339,7 @@ return {
 browser: isChrome ? 'Chrome' : isFirefox ? 'Firefox' : isSafari ? 'Safari' : isEdge ? 'Edge' : isIE ? 'IE' : 'Unknown',
 isMobile: isMobile,
 cores: navigator.hardwareConcurrency || 'unknown',
-webgl: checkWebGLSupport(), // ⭐ استخدام الوظيفة من three.core.js
+webgl: this.checkWebGLSupport(),
 webgl2: this.checkWebGL2Support(),
 lowEndDevice: this.performance.isLowEndDevice
 };
@@ -394,8 +370,13 @@ this.config.animation.bloomEffect = false;
 * Check WebGL support
 */
 checkWebGLSupport() {
-// ⭐ هذه الوظيفة مُعرفة في three.core.js، نستخدمها من هناك
-return checkWebGLSupport(); // ⭐ استخدام الوظيفة من three.core.js
+try {
+const canvas = document.createElement('canvas');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+return gl instanceof WebGLRenderingContext;
+} catch (e) {
+return false;
+}
 }
 /**
 * Check WebGL2 support
@@ -409,41 +390,135 @@ return false;
 }
 }
 /**
-* Check post-processing support - FIXED ERROR 14 (Updated for three.core.js)
-* Now checks for imported classes from three.core.js
+* Check post-processing support - FIXED ERROR 14 (Updated for window.THREE)
+* Now checks for imported classes instead of THREE global ones
 */
 checkPostProcessingSupport() {
-// ⭐ استخدام الوظيفة من three.core.js
-return checkPostProcessingSupport(); // ⭐ استخدام الوظيفة من three.core.js
+// ⭐ استخدام الفئات المُستوردة مباشرة
+const requiredClasses = [EffectComposer, RenderPass, CopyShader]; // ShaderPass is also imported
+const missingClasses = [];
+requiredClasses.forEach(cls => {
+if (typeof cls === 'undefined') {
+missingClasses.push(cls.name || 'UnknownClass');
+}
+});
+// ⭐ (اختياري) التحقق من UnrealBloomPass إذا كنت تستخدمه
+/*
+if (this.config.animation.bloomEffect) {
+if (typeof UnrealBloomPass === 'undefined') {
+missingClasses.push('UnrealBloomPass');
+}
+}
+*/
+if (missingClasses.length > 0) {
+console.warn('Some post-processing classes not available:', missingClasses);
+return false;
+}
+return true;
 }
 /**
 * Create Three.js scene
 */
 createScene() {
-// ⭐ هذه المكونات مُهيّأة من three.core.js، لا حاجة لإنشائها هنا
-// this.scene = new this.THREE.Scene();
-// this.scene.background = new this.THREE.Color(this.config.scene.background);
-// ...
-// ⭐ هذا الكود مُعطل لأن three.core.js يُنشئها
+this.scene = new this.THREE.Scene();
+this.scene.background = new this.THREE.Color(this.config.scene.background);
+// Add fog for depth (security theme)
+this.scene.fog = new this.THREE.Fog(
+this.config.scene.fog.color,
+this.config.scene.fog.near,
+this.config.scene.fog.far
+);
 }
 /**
 * Create camera
 */
 createCamera() {
-// ⭐ هذه المكونات مُهيّأة من three.core.js، لا حاجة لإنشائها هنا
-// const aspectRatio = window.innerWidth / window.innerHeight;
-// this.camera = new this.THREE.PerspectiveCamera(...);
-// ...
-// ⭐ هذا الكود مُعطل لأن three.core.js يُنشئها
+const aspectRatio = window.innerWidth / window.innerHeight;
+this.camera = new this.THREE.PerspectiveCamera(
+this.config.camera.fov,
+aspectRatio,
+this.config.camera.near,
+this.config.camera.far
+);
+this.camera.position.set(
+this.config.camera.position.x,
+this.config.camera.position.y,
+this.config.camera.position.z
+);
+this.camera.lookAt(0, 0, 0);
+// Store original position for reset
+this.camera.userData = {
+originalPosition: this.camera.position.clone(),
+originalRotation: this.camera.rotation.clone()
+};
 }
 /**
 * Create renderer with security optimizations - MODIFIED FOR SAFARI & TOUCH INTERACTION
 */
 createRenderer() {
-// ⭐ هذه المكونات مُهيّأة من three.core.js، لا حاجة لإنشائها هنا
-// this.renderer = new this.THREE.WebGLRenderer(...);
-// ...
-// ⭐ هذا الكود مُعطل لأن three.core.js يُنشئها
+try {
+// Create WebGL renderer with security settings
+const rendererOptions = {
+antialias: this.config.renderer.antialias,
+alpha: this.config.renderer.alpha,
+powerPreference: this.config.renderer.powerPreference,
+preserveDrawingBuffer: this.config.renderer.preserveDrawingBuffer,
+precision: this.config.renderer.precision,
+failIfMajorPerformanceCaveat: this.config.renderer.failIfMajorPerformanceCaveat,
+stencil: false,
+depth: true
+};
+// Use WebGL 1.0 for compatibility
+this.renderer = new this.THREE.WebGLRenderer(rendererOptions);
+// Configure renderer
+this.renderer.setSize(window.innerWidth, window.innerHeight);
+this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+this.renderer.shadowMap.enabled = this.config.renderer.shadowMap.enabled;
+// Use available shadow map type
+if (this.THREE.PCFSoftShadowMap) {
+this.renderer.shadowMap.type = this.THREE.PCFSoftShadowMap;
+}
+// Encoding and tone mapping (if available)
+if (this.THREE.sRGBEncoding) {
+this.renderer.outputEncoding = this.THREE.sRGBEncoding;
+}
+if (this.THREE.ACESFilmicToneMapping) {
+this.renderer.toneMapping = this.THREE.ACESFilmicToneMapping;
+this.renderer.toneMappingExposure = 0.9;
+}
+// Add renderer to DOM
+const container = document.getElementById('threejs-container');
+if (container) {
+// Clear any existing canvas
+while (container.firstChild) {
+container.removeChild(container.firstChild);
+}
+container.appendChild(this.renderer.domElement);
+} else {
+console.warn('Three.js container not found, creating fallback container');
+this.createFallbackContainer();
+}
+
+// ⭐ تحسينات لـ Safari وتعطيل التفاعل مع اللمس
+if (/Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)) {
+this.renderer.context = this.renderer.getContext();
+this.renderer.context.getExtension('WEBGL_lose_context');
+}
+
+// ⭐ منع التفاعل مع اللمس على عنصر العارض
+this.renderer.domElement.style.touchAction = 'none';
+this.renderer.domElement.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+this.renderer.domElement.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+this.renderer.domElement.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+
+// Set renderer ID for debugging
+this.renderer.domElement.id = 'ciphervault-3d-renderer';
+// Security: Disable context menu
+this.renderer.domElement.oncontextmenu = (e) => e.preventDefault();
+} catch (error) {
+console.error('Failed to create WebGL renderer:', error);
+this.createCanvasFallback();
+}
 }
 /**
 * Create fallback container
@@ -692,7 +767,7 @@ this.cubes.push(cube);
 }
 }
 /**
-* Create post-processing effects with fallback - FIXED ERROR 14, 15, 16 (Updated for three.core.js)
+* Create post-processing effects with fallback - FIXED ERROR 14, 15, 16 (Updated for window.THREE)
 */
 async createEffects() {
 // Skip if not supported
@@ -702,12 +777,12 @@ this.config.animation.bloomEffect = false;
 return;
 }
 try {
-// ⭐ استخدام EffectComposer المُستورد من three.core.js
+// ⭐ استخدام EffectComposer المُستورد
 this.composer = new EffectComposer(this.renderer); // ⭐ تم التغيير هنا
-// ⭐ استخدام RenderPass المُستورد من three.core.js
+// ⭐ استخدام RenderPass المُستورد
 const renderPass = new RenderPass(this.scene, this.camera); // ⭐ تم التغيير هنا
 this.composer.addPass(renderPass);
-// ⭐ (اختياري) استخدام UnrealBloomPass المُستورد من three.core.js إذا كنت تستخدم bloom
+// ⭐ (اختياري) استخدام UnrealBloomPass المُستورد إذا كنت تستخدم bloom
 /*
 if (this.config.animation.bloomEffect) {
 const bloomPass = new UnrealBloomPass(
@@ -721,7 +796,7 @@ this.effects.bloom = bloomPass;
 console.log('Bloom effect initialized');
 }
 */
-// ⭐ استخدام ShaderPass المُستورد من three.core.js (مثال)
+// ⭐ استخدام ShaderPass المُستورد (مثال)
 // const shaderPass = new ShaderPass(CopyShader); // يمكنك استخدامه لاحقًا
 // this.composer.addPass(shaderPass);
 
@@ -734,21 +809,29 @@ this.config.animation.bloomEffect = false;
 }
 }
 /**
-* Setup orbit controls with fallback - MODIFIED TO DISABLE INTERACTION WITH MOVEMENT/TOUCH (Updated for three.core.js)
+* Setup orbit controls with fallback - MODIFIED TO DISABLE INTERACTION WITH MOVEMENT/TOUCH
 */
 setupControls() {
-if (typeof OrbitControls === 'undefined') { // ⭐ استخدام OrbitControls من three.core.js
+if (typeof OrbitControls === 'undefined') { // ⭐ استخدام OrbitControls من الاستيراد
 console.warn('OrbitControls not available, using basic interaction');
 return;
 }
 try {
-// ⭐ هذا الكود مُعطل لأن three.core.js يُهيّئ OrbitControls مع الإعدادات الصحيحة
-// this.controls = new OrbitControls(this.camera, this.renderer.domElement); // ⭐ استخدام OrbitControls من three.core.js
+this.controls = new OrbitControls(this.camera, this.renderer.domElement); // ⭐ استخدام OrbitControls من الاستيراد
 
-// ⭐ التأكد من أن الإعدادات الصحيحة مُطبقة (يتم ذلك في three.core.js)
-// this.controls.enableRotate = false; // تعطيل التدوير باللمس
-// this.controls.enablePan = false;    // تعطيل التحريك
-// this.controls.enableZoom = false;   // تعطيل التكبير (يمكنك تفعيله إذا أردت)
+// ⭐ تعطيل التفاعل مع الحركة الجسدية أو اللمس (كما طلبت)
+this.controls.enableDamping = true;
+this.controls.dampingFactor = 0.05;
+this.controls.rotateSpeed = 0.5;
+this.controls.zoomSpeed = 0.8;
+this.controls.panSpeed = 0.8;
+this.controls.maxDistance = 100;
+this.controls.minDistance = 5;
+
+// ⭐ منع التفاعل مع الحركة الجسدية أو اللمس (كما طلبت)
+this.controls.enableRotate = false; // تعطيل التدوير باللمس
+this.controls.enablePan = false;    // تعطيل التحريك
+this.controls.enableZoom = false;   // تعطيل التكبير (يمكنك تفعيله إذا أردت)
 
 } catch (error) {
 console.warn('Failed to setup OrbitControls:', error);
@@ -936,7 +1019,7 @@ this.mouse.normalizedY = (this.mouse.y / window.innerHeight) * 2 - 1;
 render() {
 try {
 if (this.canvasFallback) return;
-// ⭐ استخدام this.composer المُهيّأ باستخدام three.core.js
+// ⭐ استخدام this.composer المُهيأ باستخدام ES6 imports
 if (this.composer && this.config.animation.bloomEffect) {
 this.composer.render();
 } else {
@@ -1589,7 +1672,7 @@ this.effects = {};
 * Handle initialization error
 */
 handleInitError(error) {
-console.error('❌ Three.js initialization error (ES6 Module - Updated for three.core.js):', error);
+console.error('❌ Three.js initialization error (ES6 Module - Updated for window.THREE):', error);
 this.errors.push(error);
 const errorDisplay = this.createErrorDisplay(error);
 this.dispatchEvent('threejs:error', {
@@ -1602,7 +1685,7 @@ return errorDisplay;
 * Handle render error
 */
 handleRenderError(error) {
-console.error('🎨 Render error (ES6 Module - Updated for three.core.js):', error);
+console.error('🎨 Render error (ES6 Module - Updated for window.THREE):', error);
 try {
 if (this.renderer) {
 this.renderer.forceContextLoss();
@@ -1611,7 +1694,7 @@ this.renderer.dispose();
 // Fall back to canvas
 this.createCanvasFallback();
 } catch (recoveryError) {
-console.error('🔄 Failed to recover from render error (ES6 Module - Updated for three.core.js):', recoveryError);
+console.error('🔄 Failed to recover from render error (ES6 Module - Updated for window.THREE):', recoveryError);
 this.createCanvasFallback();
 }
 }
@@ -1709,7 +1792,7 @@ console.groupEnd();
 * Cleanup all resources - MODIFIED TO REMOVE DEVICE ORIENTATION LISTENER
 */
 cleanup() {
-console.log('🧹 Cleaning up Three.js scene (ES6 Module - Updated for three.core.js)...');
+console.log('🧹 Cleaning up Three.js scene (ES6 Module - Updated for window.THREE)...');
 // Stop animation
 this.pauseAnimation();
 // Clear intervals
@@ -1769,7 +1852,7 @@ this.camera = null;
 this.renderer = null;
 this.controls = null;
 this.composer = null;
-console.log('✅ Three.js scene cleanup complete (ES6 Module - Updated for three.core.js)');
+console.log('✅ Three.js scene cleanup complete (ES6 Module - Updated for window.THREE)');
 this.dispatchEvent('threejs:cleanup:complete');
 }
 }
@@ -1806,18 +1889,18 @@ console.warn('WebGL not supported. 3D visualization disabled.');
 return null;
 }
 // Create scene manager
-ThreeScene = new ThreeSceneManager(THREE); // ⭐ تمرير THREE (من three.core.js)
-console.log('✅ Three.js scene initialized for CipherVault Security (ES6 Module - Updated for three.core.js)');
+ThreeScene = new ThreeSceneManager(window.THREE); // ⭐ تمرير window.THREE
+console.log('✅ Three.js scene initialized for CipherVault Security (ES6 Module - Updated for window.THREE)');
 // Dispatch initialization event
 if (typeof window !== 'undefined') {
 const event = new CustomEvent('threejs:initialized', {
-detail: { timestamp: Date.now(), version: '5.2.1' }
+detail: { timestamp: Date.now(), version: '5.2.3' }
 });
 window.dispatchEvent(event);
 }
 return ThreeScene;
 } catch (error) {
-console.error('❌ Failed to initialize Three.js scene (ES6 Module - Updated for three.core.js):', error);
+console.error('❌ Failed to initialize Three.js scene (ES6 Module - Updated for window.THREE):', error);
 // Create fallback visualization
 createThreeJSFallback();
 return null;
@@ -1932,4 +2015,4 @@ THREE_SCENE_CONFIG
 };
 }
 
-console.log('🔧 ThreeSceneManager v5.2.1 (ES6 Module - Updated for three.core.js) loaded - All fixes applied');
+console.log('🔧 ThreeSceneManager v5.2.3 (ES6 Module - Updated for window.THREE) loaded - All fixes applied');
